@@ -1,0 +1,313 @@
+<!--
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.basepom</groupId>
+		<artifactId>basepom-oss</artifactId>
+		<version>39</version>
+	</parent>
+	<groupId>io.github.zregvart.dbzcamel</groupId>
+	<artifactId>parent</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>Debezium and Camel examples</name>
+	<description>Examples of using Debezium and Camel</description>
+	<licenses>
+		<license>
+			<name>Apache License 2.0</name>
+			<url>http://www.spdx.org/licenses/Apache-2.0</url>
+		</license>
+	</licenses>
+
+	<properties>
+		<project.build.targetJdk>11</project.build.targetJdk>
+		<io.debezium.version>1.6.0.Final</io.debezium.version>
+		<org.testcontainers.version>1.15.3</org.testcontainers.version>
+		<io.cucumber.version>6.10.4</io.cucumber.version>
+		<com.diffplug.spotless.version>2.12.2</com.diffplug.spotless.version>
+	</properties>
+
+	<modules>
+		<module>db-to-db-camel-main</module>
+		<module>test-harness</module>
+	</modules>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.apache.camel</groupId>
+				<artifactId>camel-bom</artifactId>
+				<version>3.11.0</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.junit</groupId>
+				<artifactId>junit-bom</artifactId>
+				<version>5.7.2</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson</groupId>
+				<artifactId>jackson-bom</artifactId>
+				<version>2.12.4</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-bom</artifactId>
+				<version>${org.testcontainers.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>io.github.zregvart.dbzcamel</groupId>
+				<artifactId>test-harness</artifactId>
+				<version>${project.version}</version>
+				<classifier>tests</classifier>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>io.debezium</groupId>
+				<artifactId>debezium-testing-testcontainers</artifactId>
+				<version>${io.debezium.version}</version>
+				<scope>test</scope>
+				<exclusions>
+					<exclusion>
+						<groupId>io.quarkus</groupId>
+						<artifactId>quarkus-test-common</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers</artifactId>
+				<version>${org.testcontainers.version}</version>
+				<scope>test</scope>
+				<exclusions>
+					<exclusion>
+						<groupId>org.hamcrest</groupId>
+						<artifactId>hamcrest-core</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<repositories>
+		<repository>
+			<id>central</id>
+			<url>https://repo1.maven.org/maven2/</url>
+			<name>Maven Central</name>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+		<!-- camel-jira -->
+		<repository>
+			<id>atlassian-public</id>
+			<url>https://packages.atlassian.com/maven-external</url>
+			<name>Atlassian Public Repo</name>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+		<!-- camel-ipfs and camel-weka -->
+		<repository>
+			<id>jboss.thirdparty</id>
+			<name>JBoss Thirdparty Repository</name>
+			<url>https://repository.jboss.org/nexus/service/local/repositories/thirdparty-releases/content/</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+	</repositories>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>create-policy-jar</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<inherited>false</inherited>
+						<configuration>
+							<classesDirectory>${project.basedir}/policy</classesDirectory>
+							<classifier>policy</classifier>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-install-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>install-policy-jar</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<inherited>false</inherited>
+						<configuration>
+							<groupId>io.github.zregvart.dbzcamel</groupId>
+							<artifactId>parent</artifactId>
+							<version>${project.version}</version>
+							<classifier>policy</classifier>
+							<generatePom>true</generatePom>
+							<file>${project.build.directory}/parent-${project.version}-policy.jar</file>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>${com.diffplug.spotless.version}</version>
+				<inherited>false</inherited>
+				<executions>
+					<execution>
+						<id>format-code</id>
+						<goals>
+							<goal>apply</goal>
+						</goals>
+						<phase>process-sources</phase>
+					</execution>
+				</executions>
+				<configuration>
+					<formats>
+						<format>
+							<includes>
+								<include>*.md</include>
+								<include>.gitignore</include>
+								<include>**/*.xml</include>
+							</includes>
+							<trimTrailingWhitespace />
+							<endWithNewline />
+							<indent>
+								<tabs>true</tabs>
+								<spacesPerTab>4</spacesPerTab>
+							</indent>
+							<eclipseWtp>
+								<type>XML</type>
+								<files>
+									<file>${project.basedir}/policy/org.eclipse.wst.xml.core.prefs</file>
+								</files>
+							</eclipseWtp>
+						</format>
+					</formats>
+					<java>
+						<eclipse>
+							<file>${project.basedir}/policy/eclipse-formatter.xml</file>
+						</eclipse>
+					</java>
+					<sql>
+						<includes>
+							<include>**/*.sql</include>
+						</includes>
+						<replaceRegex>
+							<name>Newline after license</name>
+							<searchRegex>^--</searchRegex>
+							<replacement>--%n%n</replacement>
+						</replaceRegex>
+						<dbeaver>
+							<configFile>${project.basedir}/policy/dbeaver-sql-format.properties</configFile>
+						</dbeaver>
+					</sql>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.mycila</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>basepom.default</id>
+						<phase />
+					</execution>
+					<execution>
+						<id>format-license</id>
+						<phase>process-sources</phase>
+						<goals>
+							<goal>format</goal>
+						</goals>
+						<inherited>false</inherited>
+						<configuration>
+							<includes>
+								<include>**/src/**</include>
+								<include>**/pom.xml</include>
+								<include>policy/*</include>
+							</includes>
+						</configuration>
+					</execution>
+				</executions>
+				<configuration>
+					<headerDefinitions>
+						<headerDefinition>xml-prefix.xml</headerDefinition>
+					</headerDefinitions>
+					<mapping combine.children="append">
+						<feature>SCRIPT_STYLE</feature>
+						<prefs>SCRIPT_STYLE</prefs>
+					</mapping>
+					<skipExistingHeaders>true</skipExistingHeaders>
+				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>io.github.zregvart.dbzcamel</groupId>
+						<artifactId>parent</artifactId>
+						<version>${project.version}</version>
+						<classifier>policy</classifier>
+					</dependency>
+				</dependencies>
+			</plugin>
+			<plugin>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+				<configuration>
+					<configLocation>checkstyle.xml</configLocation>
+				</configuration>
+				<executions>
+					<execution>
+						<id>basepom.default</id>
+						<phase />
+						<inherited>false</inherited>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>io.github.zregvart.dbzcamel</groupId>
+						<artifactId>parent</artifactId>
+						<version>${project.version}</version>
+						<classifier>policy</classifier>
+					</dependency>
+				</dependencies>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
