@@ -40,14 +40,14 @@ public class EndToEndRouteTest implements En {
 	public EndToEndRouteTest() {
 		@SuppressWarnings("resource")
 		final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.0"))
-		    .withNetwork(EndToEndTests.testNetwork);
+			.withNetwork(EndToEndTests.testNetwork);
 		kafka.start();
 
 		@SuppressWarnings("resource")
 		final DebeziumContainer debezium = new DebeziumContainer("debezium/connect:1.6.0.Final")
-		    .withKafka(kafka)
-		    .dependsOn(kafka)
-		    .withNetwork(EndToEndTests.testNetwork);
+			.withKafka(kafka)
+			.dependsOn(kafka)
+			.withNetwork(EndToEndTests.testNetwork);
 		debezium.start();
 
 		Given("a running example", () -> {
@@ -72,14 +72,13 @@ public class EndToEndRouteTest implements En {
 
 				final SourceDatabase database = EndToEndTests.sourceDatabase();
 				final ConnectorConfiguration connector = ConnectorConfiguration.create()
-				    .with("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
-				    .with("database.hostname", database.hostname())
-				    .with("database.port", database.port())
-				    .with("database.dbname", database.name())
-				    .with("database.user", database.username())
-				    .with("database.password", database.password())
-				    .with("database.server.name", "source")
-				    .with("plugin.name", "pgoutput");
+					.with("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
+					.with("database.hostname", database.hostname())
+					.with("database.port", database.port())
+					.with("database.dbname", database.name())
+					.with("database.user", database.username())
+					.with("database.password", database.password())
+					.with("database.server.name", "source").with("plugin.name", "pgoutput");
 
 				debezium.registerConnector("source", connector);
 			}).get();
