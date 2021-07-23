@@ -13,7 +13,6 @@
  */
 package features;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -27,19 +26,16 @@ import data.Customer;
 import database.DestinationDatabase;
 import database.SourceDatabase;
 
-public class DatabaseSteps implements En {
+public final class DatabaseSteps {
 
-	public DatabaseSteps() {
-
-		DataTableType((final Map<String, String> entry) -> new Customer(entry));
-
-		When("A row is inserted in the source database", (final Customer customer) -> {
+	public static void registerWith(final En en) {
+		en.When("A row is inserted in the source database", (final Customer customer) -> {
 			final SourceDatabase sourceDatabase = EndToEndTests.sourceDatabase();
 
 			sourceDatabase.store(customer);
 		});
 
-		Then("a row is present in the destination database", (final Customer customer) -> {
+		en.Then("a row is present in the destination database", (final Customer customer) -> {
 			final DestinationDatabase destinationDatabase = EndToEndTests.destinationDatabase();
 
 			await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {

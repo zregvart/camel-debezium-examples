@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.zregvart.dbzcamel.dbtodb;
+package io.github.zregvart.dbzcamel.dbtodb.testcontainers;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,34 +23,34 @@ import javax.sql.DataSource;
 import io.cucumber.java8.En;
 import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
+import io.github.zregvart.dbzcamel.dbtodb.App;
 
 import org.apache.camel.main.BaseMainSupport;
 import org.apache.camel.main.MainListenerSupport;
-import org.junit.jupiter.api.AfterAll;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import configuration.EndToEndTests;
 import database.SourceDatabase;
+import features.DatabaseSteps;
 
-public class EndToEndRouteTest implements En {
+public final class EndToEnd implements En {
 
-	private final ExecutorService exec = Executors.newSingleThreadExecutor();
-
-	public EndToEndRouteTest() {
-		@SuppressWarnings("resource")
-		final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.0"))
-			.withNetwork(EndToEndTests.testNetwork);
-		kafka.start();
-
-		@SuppressWarnings("resource")
-		final DebeziumContainer debezium = new DebeziumContainer("debezium/connect:1.6.0.Final")
-			.withKafka(kafka)
-			.dependsOn(kafka)
-			.withNetwork(EndToEndTests.testNetwork);
-		debezium.start();
-
+	public EndToEnd() {
 		Given("a running example", () -> {
+			final ExecutorService exec = Executors.newSingleThreadExecutor();
+
+			@SuppressWarnings("resource")
+			final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.0"))
+				.withNetwork(EndToEndTests.testNetwork);
+			kafka.start();
+
+			@SuppressWarnings("resource")
+			final DebeziumContainer debezium = new DebeziumContainer("debezium/connect:1.6.0.Final")
+				.withKafka(kafka)
+				.dependsOn(kafka)
+				.withNetwork(EndToEndTests.testNetwork);
+			debezium.start();
 			ForkJoinPool.commonPool().submit(() -> {
 				final Phaser startup = new Phaser(2);
 
@@ -83,11 +83,7 @@ public class EndToEndRouteTest implements En {
 				debezium.registerConnector("source", connector);
 			}).get();
 		});
-	}
 
-	@AfterAll
-	public void shutdown() {
-		App.main.shutdown();
-		exec.shutdown();
+		DatabaseSteps.registerWith(this);
 	}
 }

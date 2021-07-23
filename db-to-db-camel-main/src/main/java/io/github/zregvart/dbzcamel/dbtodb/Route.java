@@ -20,10 +20,11 @@ public final class Route extends EndpointRouteBuilder {
 	@Override
 	public void configure() throws Exception {
 		from(kafka("source.public.customers").brokers("{{kafka.bootstrapServers}}"))
-		    .unmarshal().json()
-		    .setHeader("CamelJdbcParameters").simple("${body[after]}")
-		    .to(freemarker("insert.ftl"))
-		    .to(jdbc("app.dataSource").allowNamedParameters(true).useHeadersAsParameters(true));
+			.routeId("kafka-to-db")
+			.unmarshal().json()
+			.setHeader("CamelJdbcParameters").simple("${body[after]}")
+			.to(freemarker("insert.ftl"))
+			.to(jdbc("app.dataSource").allowNamedParameters(true).useHeadersAsParameters(true));
 	}
 
 }

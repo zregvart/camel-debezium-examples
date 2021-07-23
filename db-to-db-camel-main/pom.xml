@@ -35,6 +35,14 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.camel</groupId>
+			<artifactId>camel-core-engine</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.camel</groupId>
+			<artifactId>camel-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.camel</groupId>
 			<artifactId>camel-bean</artifactId>
 			<scope>runtime</scope>
 		</dependency>
@@ -66,6 +74,22 @@
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>1.2.3</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.camel</groupId>
+			<artifactId>camel-direct</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.camel</groupId>
+			<artifactId>camel-mock</artifactId>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
@@ -103,10 +127,15 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-			<version>1.2.3</version>
-			<scope>runtime</scope>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>3.11.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.assertj</groupId>
+			<artifactId>assertj-core</artifactId>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	<build>
@@ -121,9 +150,29 @@
 						<packages>features</packages>
 					</selectors>
 					<parameters>
-						<cucumber.glue>features,io.github.zregvart.dbzcamel.dbtodb</cucumber.glue>
+						<cucumber.glue>features,io.github.zregvart.dbzcamel.dbtodb.memory</cucumber.glue>
 					</parameters>
+					<isolation>ABSOLUTE</isolation>
+					<tweaks>
+						<additionalLauncherDependencies>
+							<additionalLauncherDependency>io.cucumber:cucumber-junit-platform-engine:${io.cucumber.version}</additionalLauncherDependency>
+						</additionalLauncherDependencies>
+					</tweaks>
 				</configuration>
+				<executions>
+					<execution>
+						<id>end-to-end</id>
+						<phase>integration-test</phase>
+						<goals>
+							<goal>launch</goal>
+						</goals>
+						<configuration>
+							<parameters>
+								<cucumber.glue>features,io.github.zregvart.dbzcamel.dbtodb.testcontainers</cucumber.glue>
+							</parameters>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

@@ -11,22 +11,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package database;
+package features;
 
-import javax.sql.DataSource;
+import java.util.Map;
 
-public interface Database {
+import io.cucumber.java8.En;
 
-	DataSource dataSource();
+import data.Customer;
 
-	String hostname();
-
-	String name();
-
-	String password();
-
-	int port();
-
-	String username();
-
+public final class CustomerData implements En {
+	public CustomerData() {
+		DataTableType((final Map<String, String> entry) -> new Customer(entry));
+	}
 }

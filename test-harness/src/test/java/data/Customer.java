@@ -16,13 +16,17 @@ package data;
 import java.util.Map;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public final class Customer {
 	public final String email;
 
+	@JsonProperty("first_name")
 	public final String firstName;
 
 	public final int id;
 
+	@JsonProperty("last_name")
 	public final String lastName;
 
 	public Customer(final int id, final String firstName, final String lastName, final String email) {
@@ -49,9 +53,9 @@ public final class Customer {
 		final Customer another = (Customer) obj;
 
 		return Objects.equals(id, another.id)
-		    && Objects.equals(firstName, another.firstName)
-		    && Objects.equals(lastName, another.lastName)
-		    && Objects.equals(email, another.email);
+			&& Objects.equals(firstName, another.firstName)
+			&& Objects.equals(lastName, another.lastName)
+			&& Objects.equals(email, another.email);
 	}
 
 	@Override
@@ -62,9 +66,9 @@ public final class Customer {
 	@Override
 	public String toString() {
 		return new StringBuilder("Customer: id: ").append(id)
-		    .append(", firstName: ").append(firstName)
-		    .append(", lastName: ").append(lastName)
-		    .append(", email: ").append(email)
-		    .toString();
+			.append(", firstName: ").append(firstName)
+			.append(", lastName: ").append(lastName)
+			.append(", email: ").append(email)
+			.toString();
 	}
 }

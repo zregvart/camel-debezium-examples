@@ -17,7 +17,7 @@ import org.apache.camel.main.Main;
 import org.apache.camel.main.MainConfigurationProperties;
 
 public final class App {
-	static final Main main = new Main();
+	public static final Main main = new Main();
 
 	public static void main(final String... args) {
 		try (MainConfigurationProperties configure = main.configure()) {
