@@ -13,10 +13,9 @@
     limitations under the License.
 
 -->
-<#import "columns.ftl" as c>
-<#macro insert table columns>
-INSERT INTO ${table} (
-<@c.list columns />
-) VALUES (
-<@c.list columns=columns prefix=":?" />
-)</#macro>
+<#macro list columns separator="," prefix="">
+<#list columns as column>
+  ${prefix}${column}<#sep>${separator}
+</#list>
+
+</#macro>

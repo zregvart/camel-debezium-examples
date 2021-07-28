@@ -13,10 +13,7 @@
     limitations under the License.
 
 -->
-<#import "columns.ftl" as c>
-<#macro insert table columns>
-INSERT INTO ${table} (
-<@c.list columns />
-) VALUES (
-<@c.list columns=columns prefix=":?" />
-)</#macro>
+<#import "insert.ftl" as i>
+<#if (body['before'])!{}?size == 0>
+  <@i.insert body['source']['table'] body['after']?keys />
+</#if>
