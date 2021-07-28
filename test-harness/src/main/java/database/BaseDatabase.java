@@ -28,6 +28,8 @@ import configuration.EndToEndTests;
 
 abstract class BaseDatabase {
 
+	private final JdbcDatabaseContainer<?> database;
+
 	private final DataSource dataSource;
 
 	private final String hostname;
@@ -43,9 +45,9 @@ abstract class BaseDatabase {
 	@SuppressWarnings("resource")
 	public BaseDatabase(final String classifier, final JdbcDatabaseContainer<?> database, final int databasePort) {
 		database.withDatabaseName(classifier)
-		    .withNetwork(EndToEndTests.testNetwork)
-		    .withNetworkAliases(classifier)
-		    .start();
+			.withNetwork(EndToEndTests.testNetwork)
+			.withNetworkAliases(classifier)
+			.start();
 
 		hostname = classifier;
 
@@ -60,6 +62,8 @@ abstract class BaseDatabase {
 		dataSource = createDataSource(database);
 
 		migrate(classifier, dataSource);
+
+		this.database = database;
 	}
 
 	public final DataSource dataSource() {
@@ -82,6 +86,10 @@ abstract class BaseDatabase {
 		return port;
 	}
 
+	public void stop() {
+		database.stop();
+	}
+
 	public final String username() {
 		return username;
 	}
@@ -100,9 +108,9 @@ abstract class BaseDatabase {
 
 	private static void migrate(final String classifier, final DataSource dataSource) {
 		final Flyway flyway = Flyway.configure(Flyway.class.getClassLoader())
-		    .dataSource(dataSource)
-		    .locations("db/migration/" + classifier)
-		    .load();
+			.dataSource(dataSource)
+			.locations("db/migration/" + classifier)
+			.load();
 
 		flyway.migrate();
 	}
@@ -139,5 +147,4 @@ abstract class BaseDatabase {
 			throw new IllegalStateException("Unable to register JDBC driver with DriverManager", e);
 		}
 	}
-
 }

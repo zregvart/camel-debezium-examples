@@ -58,6 +58,8 @@ public final class InMemory implements En {
 			camel.start();
 		});
 
+		After(camel::stop);
+
 		InMemorySteps.registerWith(camel, this);
 	}
 

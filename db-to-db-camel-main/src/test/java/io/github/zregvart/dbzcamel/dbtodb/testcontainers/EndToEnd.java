@@ -13,10 +13,7 @@
  */
 package io.github.zregvart.dbzcamel.dbtodb.testcontainers;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.Phaser;
+import java.util.concurrent.CompletableFuture;
 
 import javax.sql.DataSource;
 
@@ -38,12 +35,11 @@ public final class EndToEnd implements En {
 
 	public EndToEnd() {
 		Given("a running example", () -> {
-			final ExecutorService exec = Executors.newSingleThreadExecutor();
-
 			@SuppressWarnings("resource")
 			final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.0"))
 				.withNetwork(EndToEndTests.testNetwork);
 			kafka.start();
+			After(kafka::stop);
 
 			@SuppressWarnings("resource")
 			final DebeziumContainer debezium = new DebeziumContainer("debezium/connect:1.6.0.Final")
@@ -51,39 +47,51 @@ public final class EndToEnd implements En {
 				.dependsOn(kafka)
 				.withNetwork(EndToEndTests.testNetwork);
 			debezium.start();
-			ForkJoinPool.commonPool().submit(() -> {
-				final Phaser startup = new Phaser(2);
+			After(debezium::stop);
 
-				final DataSource dataSource = EndToEndTests.destinationDatabase().dataSource();
-				App.main.bind("app.dataSource", dataSource);
+			final DataSource dataSource = EndToEndTests.destinationDatabase().dataSource();
+			App.main.bind("app.dataSource", dataSource);
 
-				App.main.addInitialProperty("kafka.bootstrapServers", kafka.getBootstrapServers());
+			App.main.addInitialProperty("kafka.bootstrapServers", kafka.getBootstrapServers());
 
-				App.main.addMainListener(new MainListenerSupport() {
-					@Override
-					public void afterStart(final BaseMainSupport main) {
-						startup.arrive();
-					}
-				});
+			startCamel()
+				.thenApply(v -> debezium)
+				.thenAccept(EndToEnd::startSourceConnector)
+				.get(); // block until everything is running
 
-				exec.execute(() -> App.main());
-
-				startup.arriveAndAwaitAdvance();
-
-				final SourceDatabase database = EndToEndTests.sourceDatabase();
-				final ConnectorConfiguration connector = ConnectorConfiguration.create()
-					.with("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
-					.with("database.hostname", database.hostname())
-					.with("database.port", database.port())
-					.with("database.dbname", database.name())
-					.with("database.user", database.username())
-					.with("database.password", database.password())
-					.with("database.server.name", "source").with("plugin.name", "pgoutput");
-
-				debezium.registerConnector("source", connector);
-			}).get();
+			After(App.main::stop);
 		});
 
 		DatabaseSteps.registerWith(this);
+	}
+
+	static CompletableFuture<BaseMainSupport> startCamel() {
+		final CompletableFuture<BaseMainSupport> camel = new CompletableFuture<>();
+
+		App.main.addMainListener(new MainListenerSupport() {
+			@Override
+			public void afterStart(final BaseMainSupport main) {
+				camel.complete(main);
+			}
+		});
+
+		CompletableFuture.runAsync(App::main)
+			.handle((v, t) -> camel.completeExceptionally(t));
+
+		return camel;
+	}
+
+	static void startSourceConnector(final DebeziumContainer debezium) {
+		final SourceDatabase database = EndToEndTests.sourceDatabase();
+		final ConnectorConfiguration connector = ConnectorConfiguration.create()
+			.with("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
+			.with("database.hostname", database.hostname())
+			.with("database.port", database.port())
+			.with("database.dbname", database.name())
+			.with("database.user", database.username())
+			.with("database.password", database.password())
+			.with("database.server.name", "source").with("plugin.name", "pgoutput");
+
+		debezium.registerConnector("source", connector);
 	}
 }

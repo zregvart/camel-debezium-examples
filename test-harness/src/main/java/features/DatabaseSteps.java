@@ -33,6 +33,8 @@ public final class DatabaseSteps {
 			final SourceDatabase sourceDatabase = EndToEndTests.sourceDatabase();
 
 			sourceDatabase.store(customer);
+
+			en.After(sourceDatabase::stop);
 		});
 
 		en.Then("a row is present in the destination database", (final Customer customer) -> {
@@ -42,6 +44,8 @@ public final class DatabaseSteps {
 				final Optional<Customer> loaded = destinationDatabase.load(customer.id);
 				assertThat(loaded).contains(customer);
 			});
+
+			en.After(destinationDatabase::stop);
 		});
 
 	}

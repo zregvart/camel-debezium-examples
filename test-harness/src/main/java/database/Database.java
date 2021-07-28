@@ -27,6 +27,7 @@ public interface Database {
 
 	int port();
 
-	String username();
+	void stop();
 
+	String username();
 }

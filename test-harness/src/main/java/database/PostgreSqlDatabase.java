@@ -31,7 +31,7 @@ public final class PostgreSqlDatabase extends BaseDatabase implements SourceData
 	@Override
 	public void store(final Customer customer) {
 		try (Connection connection = dataSource().getConnection();
-		    PreparedStatement insert = connection.prepareStatement("INSERT INTO customers (id, first_name, last_name, email) VALUES (?, ?, ?, ?)")) {
+			PreparedStatement insert = connection.prepareStatement("INSERT INTO customers (id, first_name, last_name, email) VALUES (?, ?, ?, ?)")) {
 
 			insert.setInt(1, customer.id);
 			insert.setString(2, customer.firstName);
