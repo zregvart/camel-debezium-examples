@@ -76,6 +76,12 @@
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.freemarker</groupId>
+			<artifactId>freemarker</artifactId>
+			<version>2.3.31</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 			<version>1.2.3</version>
@@ -95,6 +101,12 @@
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-api</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>net.jqwik</groupId>
+			<artifactId>jqwik-api</artifactId>
+			<scope>test</scope>
+			<version>${net.jqwik.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.github.zregvart.dbzcamel</groupId>
@@ -135,39 +147,79 @@
 			<artifactId>assertj-core</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.github.jsqlparser</groupId>
+			<artifactId>jsqlparser</artifactId>
+			<version>4.1</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
 			<plugin>
 				<groupId>de.sormuras.junit</groupId>
 				<artifactId>junit-platform-maven-plugin</artifactId>
-				<version>1.1.2</version>
-				<extensions>true</extensions>
 				<configuration>
-					<selectors>
-						<packages>features</packages>
-					</selectors>
-					<parameters>
-						<cucumber.glue>features,io.github.zregvart.dbzcamel.dbtodb.memory</cucumber.glue>
-					</parameters>
-					<isolation>ABSOLUTE</isolation>
 					<tweaks>
-						<additionalLauncherDependencies>
-							<additionalLauncherDependency>io.cucumber:cucumber-junit-platform-engine:${io.cucumber.version}</additionalLauncherDependency>
-						</additionalLauncherDependencies>
+						<failIfNoTests>false</failIfNoTests>
 					</tweaks>
 				</configuration>
 				<executions>
 					<execution>
-						<id>end-to-end</id>
+						<id>unit</id>
+						<phase>test</phase>
+						<goals>
+							<goal>launch</goal>
+						</goals>
+						<configuration>
+							<selectors>
+								<packages>io.github.zregvart.dbzcamel</packages>
+							</selectors>
+							<tweaks>
+								<additionalLauncherDependencies>
+									<additionalLauncherDependency>net.jqwik:jqwik-engine:${net.jqwik.version}</additionalLauncherDependency>
+								</additionalLauncherDependencies>
+							</tweaks>
+						</configuration>
+					</execution>
+					<execution>
+						<id>acceptance-memory</id>
+						<phase>test</phase>
+						<goals>
+							<goal>launch</goal>
+						</goals>
+						<configuration>
+							<selectors>
+								<packages>features</packages>
+							</selectors>
+							<parameters>
+								<cucumber.glue>features,io.github.zregvart.dbzcamel.dbtodb.memory</cucumber.glue>
+							</parameters>
+							<tweaks>
+								<additionalLauncherDependencies>
+									<additionalLauncherDependency>io.cucumber:cucumber-junit-platform-engine:${io.cucumber.version}</additionalLauncherDependency>
+								</additionalLauncherDependencies>
+							</tweaks>
+						</configuration>
+					</execution>
+					<execution>
+						<id>acceptance-testcontainers</id>
 						<phase>integration-test</phase>
 						<goals>
 							<goal>launch</goal>
 						</goals>
 						<configuration>
+							<selectors>
+								<packages>features</packages>
+							</selectors>
 							<parameters>
 								<cucumber.glue>features,io.github.zregvart.dbzcamel.dbtodb.testcontainers</cucumber.glue>
 							</parameters>
+							<tweaks>
+								<additionalLauncherDependencies>
+									<additionalLauncherDependency>io.cucumber:cucumber-junit-platform-engine:${io.cucumber.version}</additionalLauncherDependency>
+								</additionalLauncherDependencies>
+							</tweaks>
 						</configuration>
 					</execution>
 				</executions>

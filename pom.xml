@@ -34,10 +34,11 @@
 
 	<properties>
 		<project.build.targetJdk>11</project.build.targetJdk>
+		<com.diffplug.spotless.version>2.12.2</com.diffplug.spotless.version>
+		<io.cucumber.version>6.10.4</io.cucumber.version>
 		<io.debezium.version>1.6.0.Final</io.debezium.version>
 		<org.testcontainers.version>1.15.3</org.testcontainers.version>
-		<io.cucumber.version>6.10.4</io.cucumber.version>
-		<com.diffplug.spotless.version>2.12.2</com.diffplug.spotless.version>
+		<net.jqwik.version>1.5.3</net.jqwik.version>
 	</properties>
 
 	<modules>
@@ -317,6 +318,16 @@
 				</dependencies>
 			</plugin>
 		</plugins>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>de.sormuras.junit</groupId>
+					<artifactId>junit-platform-maven-plugin</artifactId>
+					<version>1.1.2</version>
+					<extensions>true</extensions>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 	</build>
 
 </project>
