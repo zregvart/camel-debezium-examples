@@ -39,7 +39,7 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
 
-public class SqlTemplateTest {
+public class SqlTemplatePropertyTest {
 
 	private static final Set<String> RESERVED_WORDS = Stream.concat(
 		Stream.of("SEL"),
@@ -49,9 +49,9 @@ public class SqlTemplateTest {
 
 	final Configuration freemarker;
 
-	public SqlTemplateTest() throws IOException {
+	public SqlTemplatePropertyTest() throws IOException {
 		freemarker = new Configuration(Configuration.getVersion());
-		final String insertTemplate = SqlTemplateTest.class.getResource("/sql.ftl").getFile();
+		final String insertTemplate = SqlTemplatePropertyTest.class.getResource("/sql.ftl").getFile();
 
 		freemarker.setDirectoryForTemplateLoading(new File(insertTemplate).getParentFile());
 	}
@@ -106,7 +106,7 @@ public class SqlTemplateTest {
 	@Provide
 	static Arbitrary<Map<String, Object>> kindsOfPayloads() {
 		return Combinators.combine(tableName(), columnNames())
-			.as(SqlTemplateTest::createPayload);
+			.as(SqlTemplatePropertyTest::createPayload);
 	}
 
 	static Arbitrary<String> tableName() {

@@ -13,19 +13,34 @@
  */
 package io.github.zregvart.dbzcamel.dbtodb.testcontainers;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.sql.DataSource;
 
 import io.cucumber.java8.En;
+import io.cucumber.java8.HookBody;
 import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
 import io.github.zregvart.dbzcamel.dbtodb.App;
 
+import org.apache.camel.Message;
+import org.apache.camel.builder.endpoint.EndpointRouteBuilder;
 import org.apache.camel.main.BaseMainSupport;
+import org.apache.camel.main.MainConfigurationProperties;
 import org.apache.camel.main.MainListenerSupport;
+import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
+import org.approvaltests.namer.ApprovalNamer;
+import org.approvaltests.namer.NamedEnvironment;
+import org.approvaltests.namer.NamerFactory;
+import org.approvaltests.namer.NamerWrapper;
+import org.approvaltests.scrubbers.RegExScrubber;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
+
+import com.spun.util.persistence.Loader;
 
 import configuration.EndToEndTests;
 import database.SourceDatabase;
@@ -34,6 +49,8 @@ import features.DatabaseSteps;
 public final class EndToEnd implements En {
 
 	public EndToEnd() {
+		final List<String> payloads = new CopyOnWriteArrayList<>();
+
 		Given("a running example", () -> {
 			@SuppressWarnings("resource")
 			final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.0"))
@@ -54,15 +71,50 @@ public final class EndToEnd implements En {
 
 			App.main.addInitialProperty("kafka.bootstrapServers", kafka.getBootstrapServers());
 
+			@SuppressWarnings("resource")
+			final MainConfigurationProperties configuration = App.main.configure();
+
+			configuration.addRoutesBuilder(new EndpointRouteBuilder() {
+				@Override
+				public void configure() throws Exception {
+					from(kafka("source.public.customers").brokers("{{kafka.bootstrapServers}}").clientId("approval-test"))
+						.process(exchange -> {
+							final Message message = exchange.getMessage();
+							final String payload = message.getBody(String.class);
+							payloads.add(payload);
+						})
+						.routeId("approval-tests");
+				}
+			});
+
 			startCamel()
 				.thenApply(v -> debezium)
 				.thenAccept(EndToEnd::startSourceConnector)
 				.get(); // block until everything is running
-
-			After(App.main::stop);
 		});
 
+		After(App.main::stop);
+		After(EndToEnd.approvalTest(payloads));
+
 		DatabaseSteps.registerWith(this);
+	}
+
+	static HookBody approvalTest(final List<String> payloads) {
+		return scenario -> {
+			final Loader<ApprovalNamer> initial = Approvals.namerCreater;
+
+			Approvals.namerCreater = () -> {
+				return new NamerWrapper(scenario::getName, () -> "test-harness/src/main/resources/features");
+			};
+
+			try (NamedEnvironment env = NamerFactory.withParameters(scenario.getName())) {
+				for (final String payload : payloads) {
+					Approvals.verifyJson(payload, new Options().withScrubber(replaceTimestamps()));
+				}
+			} finally {
+				Approvals.namerCreater = initial;
+			}
+		};
 	}
 
 	static CompletableFuture<BaseMainSupport> startCamel() {
@@ -93,5 +145,9 @@ public final class EndToEnd implements En {
 			.with("database.server.name", "source").with("plugin.name", "pgoutput");
 
 		debezium.registerConnector("source", connector);
+	}
+
+	private static RegExScrubber replaceTimestamps() {
+		return new RegExScrubber("\"ts_ms\": [0-9]{13}", "\"ts_ms\": 872835240000");
 	}
 }

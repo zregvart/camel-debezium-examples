@@ -1,0 +1,23 @@
+{
+  "after": {
+    "id": 1,
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "john.doe@example.com"
+  },
+  "source": {
+    "version": "1.6.0.Final",
+    "connector": "postgresql",
+    "name": "source",
+    "ts_ms": 872835240000,
+    "snapshot": "true",
+    "db": "source",
+    "sequence": "[null,\"23017760\"]",
+    "schema": "public",
+    "table": "customers",
+    "txId": 491,
+    "lsn": 23017760
+  },
+  "op": "r",
+  "ts_ms": 872835240000
+}
