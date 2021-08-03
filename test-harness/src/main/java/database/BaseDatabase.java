@@ -18,11 +18,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import javax.sql.DataSource;
 
 import org.flywaydb.core.Flyway;
 import org.picocontainer.Disposable;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import com.zaxxer.hikari.HikariDataSource;
@@ -32,75 +35,102 @@ import data.Customer;
 
 abstract class BaseDatabase implements Disposable {
 
-	private final JdbcDatabaseContainer<?> database;
+	static {
+		// Initialize Testcontainer's docker client early and on a single
+		// thread, otherwise
+		//
+		// WARN o.t.d.DockerClientProviderStrategy - Can't instantiate a
+		// strategy from
+		// org.testcontainers.dockerclient.UnixSocketClientProviderStrategy
+		// (ClassNotFoundException). This probably means that cached
+		// configuration refers to a client provider class that is not available
+		// in this version of Testcontainers. Other strategies will be tried
+		// instead.
+		//
+		// ERROR o.t.d.DockerClientProviderStrategy - Could not find a valid
+		// Docker environment. Please check configuration. Attempted
+		// configurations were:
+		//
+		// ERROR o.t.d.DockerClientProviderStrategy - As no valid configuration
+		// was found, execution cannot continue
 
-	private final DataSource dataSource;
+		initializeTestcontainers();
+	}
 
-	private final String hostname;
+	private final CompletableFuture<State> state = new CompletableFuture<>();
 
-	private final String name;
+	private static class State {
 
-	private final String password;
+		private final JdbcDatabaseContainer<?> container;
 
-	private final int port;
+		private final DataSource dataSource;
 
-	private final String username;
+		private final String hostname;
+
+		private final String name;
+
+		private final String password;
+
+		private final int port;
+
+		private final String username;
+
+		public State(final JdbcDatabaseContainer<?> container, final DataSource dataSource, final String hostname, final String name, final String username,
+			final String password, final int port) {
+			this.container = container;
+			this.dataSource = dataSource;
+			this.hostname = hostname;
+			this.name = name;
+			this.username = username;
+			this.password = password;
+			this.port = port;
+		}
+
+	}
 
 	@SuppressWarnings("resource")
-	public BaseDatabase(final String classifier, final JdbcDatabaseContainer<?> database, final int databasePort) {
-		database.withDatabaseName(classifier)
-			.withNetwork(EndToEndTests.testNetwork)
-			.withNetworkAliases(classifier)
-			.start();
+	public BaseDatabase(final String classifier, final JdbcDatabaseContainer<?> container, final int databasePort) {
+		state.completeAsync(() -> {
+			container.withDatabaseName(classifier)
+				.withNetwork(EndToEndTests.testNetwork)
+				.withNetworkAliases(classifier)
+				.start();
 
-		hostname = classifier;
+			final DataSource dataSource = createDataSource(container);
 
-		port = databasePort;
+			migrate(classifier, dataSource);
 
-		name = database.getDatabaseName();
-
-		username = database.getUsername();
-
-		password = database.getPassword();
-
-		dataSource = createDataSource(database);
-
-		migrate(classifier, dataSource);
-
-		this.database = database;
+			return new State(container, dataSource, classifier, container.getDatabaseName(), container.getUsername(), container.getPassword(), databasePort);
+		});
 	}
 
 	public final DataSource dataSource() {
-		return dataSource;
+		return state().dataSource;
 	}
 
 	@Override
 	public final void dispose() {
-		database.stop();
+		state.thenAccept(s -> s.container.stop());
 	}
 
 	public final String hostname() {
-		return hostname;
+		return state().hostname;
 	}
 
 	public final String name() {
-		return name;
+		return state().name;
 	}
 
 	public final String password() {
-		return password;
+		return state().password;
 	}
 
 	public final int port() {
-		return port;
-	}
-
-	public void stop() {
-		database.stop();
+		return state().port;
 	}
 
 	public final String username() {
-		return username;
+		return state().username;
 	}
 
 	Optional<Customer> load(final int id) {
@@ -140,6 +170,14 @@ abstract class BaseDatabase implements Disposable {
 		}
 	}
 
+	private State state() {
+		try {
+			return state.get();
+		} catch (InterruptedException | ExecutionException e) {
+			throw new ExceptionInInitializerError(e);
+		}
+	}
+
 	private static DataSource createDataSource(final JdbcDatabaseContainer<?> database) {
 		final HikariDataSource dataSource = new HikariDataSource();
 		final String jdbcUrl = database.getJdbcUrl();
@@ -148,6 +186,11 @@ abstract class BaseDatabase implements Disposable {
 		dataSource.setPassword(database.getPassword());
 
 		return dataSource;
+	}
+
+	@SuppressWarnings("resource")
+	private static void initializeTestcontainers() {
+		DockerClientFactory.instance().client();
 	}
 
 	private static void migrate(final String classifier, final DataSource dataSource) {
