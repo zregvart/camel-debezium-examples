@@ -38,6 +38,7 @@
 			<groupId>io.cucumber</groupId>
 			<artifactId>cucumber-picocontainer</artifactId>
 			<version>${io.cucumber.version}</version>
+			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>io.cucumber</groupId>
@@ -106,11 +107,6 @@
 		<dependency>
 			<groupId>org.assertj</groupId>
 			<artifactId>assertj-core</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.awaitility</groupId>
-			<artifactId>awaitility</artifactId>
-			<version>4.1.0</version>
 		</dependency>
 	</dependencies>
 </project>
