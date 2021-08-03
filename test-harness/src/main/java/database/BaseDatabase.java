@@ -22,6 +22,7 @@ import java.util.Optional;
 import javax.sql.DataSource;
 
 import org.flywaydb.core.Flyway;
+import org.picocontainer.Disposable;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import com.zaxxer.hikari.HikariDataSource;
@@ -29,7 +30,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import configuration.EndToEndTests;
 import data.Customer;
 
-abstract class BaseDatabase {
+abstract class BaseDatabase implements Disposable {
 
 	private final JdbcDatabaseContainer<?> database;
 
@@ -71,6 +72,11 @@ abstract class BaseDatabase {
 
 	public final DataSource dataSource() {
 		return dataSource;
+	}
+
+	@Override
+	public final void dispose() {
+		database.stop();
 	}
 
 	public final String hostname() {
