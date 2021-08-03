@@ -39,8 +39,6 @@ import org.approvaltests.namer.NamerFactory;
 import org.approvaltests.namer.NamerWrapper;
 import org.approvaltests.scrubbers.RegExScrubber;
 import org.approvaltests.scrubbers.Scrubbers;
-import org.testcontainers.containers.KafkaContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import com.spun.util.persistence.Loader;
 
@@ -51,30 +49,25 @@ import configuration.EndToEndTests;
 import data.Customer;
 import database.MySQLDestinationDatabase;
 import database.PostgreSQLSourceDatabase;
+import kafka.Kafka;
 
 public final class EndToEnd implements En {
 
-	public EndToEnd(final PostgreSQLSourceDatabase postgresql, final MySQLDestinationDatabase mysql) {
+	public EndToEnd(final PostgreSQLSourceDatabase postgresql, final MySQLDestinationDatabase mysql, final Kafka kafka) {
 		final List<String> payloads = new CopyOnWriteArrayList<>();
 
 		Given("a running example", () -> {
 			@SuppressWarnings("resource")
-			final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.0"))
-				.withNetwork(EndToEndTests.testNetwork);
-			kafka.start();
-			After(kafka::stop);
-
-			@SuppressWarnings("resource")
 			final DebeziumContainer debezium = new DebeziumContainer("debezium/connect:1.6.0.Final")
-				.withKafka(kafka)
-				.dependsOn(kafka)
+				.withKafka(kafka.container())
+				.dependsOn(kafka.container())
 				.withNetwork(EndToEndTests.testNetwork);
 			debezium.start();
 			After(debezium::stop);
 
 			App.main.bind("app.dataSource", mysql.dataSource());
 
-			App.main.addInitialProperty("kafka.bootstrapServers", kafka.getBootstrapServers());
+			App.main.addInitialProperty("kafka.bootstrapServers", kafka.container().getBootstrapServers());
 
 			@SuppressWarnings("resource")
 			final MainConfigurationProperties configuration = App.main.configure();
