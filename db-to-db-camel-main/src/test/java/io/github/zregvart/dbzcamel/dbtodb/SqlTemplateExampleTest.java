@@ -13,9 +13,6 @@
  */
 package io.github.zregvart.dbzcamel.dbtodb;
 
-import static approval.Approval.allPayloadsMapped;
-import static approval.Approval.baseFileName;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -23,8 +20,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.approvaltests.Approvals;
 import org.approvaltests.namer.NamedEnvironment;
@@ -41,6 +38,8 @@ import freemarker.template.TemplateException;
 import freemarker.template.TemplateNotFoundException;
 
 public class SqlTemplateExampleTest {
+
+	private static final String APPROVED_JSON = ".approved.json";
 
 	final Configuration freemarker;
 
@@ -69,8 +68,26 @@ public class SqlTemplateExampleTest {
 		}
 	}
 
-	static List<Arguments> payloadsFromApprovalTests() {
-		return allPayloadsMapped(path -> Arguments.of(Named.of(baseFileName(path), baseFileName(path)), readString(path)));
+	public static String baseFileName(final Path path) {
+		final Path fileNamePath = path.getFileName();
+		if (fileNamePath == null) {
+			return "";
+		}
+
+		final String fileName = fileNamePath.toString();
+
+		return fileName.substring(0, fileName.length() - APPROVED_JSON.length());
+	}
+
+	static Stream<Arguments> payloadsFromApprovalTests() {
+		final Path features = Path.of("test-harness", "src", "main", "resources", "features");
+		try {
+			return Files.list(features)
+				.filter(path -> path.toString().endsWith(APPROVED_JSON))
+				.map(path -> Arguments.of(Named.of(baseFileName(path), baseFileName(path)), readString(path)));
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		}
 	}
 
 	private static String readString(final Path path) {
