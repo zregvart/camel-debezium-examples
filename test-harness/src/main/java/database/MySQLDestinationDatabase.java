@@ -13,21 +13,18 @@
  */
 package database;
 
-import javax.sql.DataSource;
+import java.util.Optional;
 
-public interface Database {
+import data.Customer;
 
-	DataSource dataSource();
+public final class MySQLDestinationDatabase extends MySQLDatabase {
 
-	String hostname();
+	public MySQLDestinationDatabase() {
+		super("destination");
+	}
 
-	String name();
-
-	String password();
-
-	int port();
-
-	void stop();
-
-	String username();
+	@Override
+	public Optional<Customer> load(final int id) {
+		return super.load(id);
+	}
 }

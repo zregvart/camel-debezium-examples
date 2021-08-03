@@ -13,44 +13,13 @@
  */
 package database;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Optional;
-
 import org.testcontainers.containers.MySQLContainer;
 
-import data.Customer;
-
-public final class MySQLDatabase extends BaseDatabase implements DestinationDatabase {
+abstract class MySQLDatabase extends BaseDatabase {
 
 	@SuppressWarnings("resource")
-	public MySQLDatabase(final String classifier) {
+	MySQLDatabase(final String classifier) {
 		super(classifier, new MySQLContainer<>("mysql:8"), MySQLContainer.MYSQL_PORT);
-	}
-
-	@Override
-	public Optional<Customer> load(final int id) {
-		try (Connection connection = dataSource().getConnection();
-		    PreparedStatement select = connection.prepareStatement("SELECT id, first_name, last_name, email FROM customers WHERE id = ?")) {
-
-			select.setInt(1, id);
-
-			try (ResultSet row = select.executeQuery()) {
-				if (!row.next()) {
-					return Optional.empty();
-				}
-
-				return Optional.of(
-				    new Customer(id,
-				        row.getString("first_name"),
-				        row.getString("last_name"),
-				        row.getString("email")));
-			}
-		} catch (final SQLException e) {
-			throw new AssertionError(e);
-		}
 	}
 
 }

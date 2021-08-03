@@ -15,8 +15,14 @@ package database;
 
 import data.Customer;
 
-public interface SourceDatabase extends Database {
+public final class PostgreSQLSourceDatabase extends PostgreSQLDatabase {
 
-	void store(Customer customer);
+	public PostgreSQLSourceDatabase() {
+		super("source");
+	}
 
+	@Override
+	public void store(final Customer customer) {
+		super.store(customer);
+	}
 }

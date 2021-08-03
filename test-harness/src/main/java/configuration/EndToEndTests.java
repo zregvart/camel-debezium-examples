@@ -13,29 +13,10 @@
  */
 package configuration;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.testcontainers.containers.Network;
-
-import database.Database;
-import database.DestinationDatabase;
-import database.MySQLDatabase;
-import database.PostgreSqlDatabase;
-import database.SourceDatabase;
 
 public final class EndToEndTests {
 
-    public static final Network testNetwork = Network.newNetwork();
-
-    private static final Map<String, Database> memo = new ConcurrentHashMap<>();
-
-    public static DestinationDatabase destinationDatabase() {
-        return (DestinationDatabase) memo.computeIfAbsent("destination", x -> new MySQLDatabase(x));
-    }
-
-    public static SourceDatabase sourceDatabase() {
-        return (SourceDatabase) memo.computeIfAbsent("source", x -> new PostgreSqlDatabase(x));
-    }
+	public static final Network testNetwork = Network.newNetwork();
 
 }

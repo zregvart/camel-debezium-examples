@@ -13,18 +13,21 @@
  */
 package database;
 
-import java.sql.DriverManager;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 
 import javax.sql.DataSource;
 
 import org.flywaydb.core.Flyway;
-import org.postgresql.Driver;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import com.zaxxer.hikari.HikariDataSource;
 
 import configuration.EndToEndTests;
+import data.Customer;
 
 abstract class BaseDatabase {
 
@@ -94,9 +97,44 @@ abstract class BaseDatabase {
 		return username;
 	}
 
-	private static DataSource createDataSource(final JdbcDatabaseContainer<?> database) {
-		registerDrivers();
+	Optional<Customer> load(final int id) {
+		try (Connection connection = dataSource().getConnection();
+			PreparedStatement select = connection.prepareStatement("SELECT id, first_name, last_name, email FROM customers WHERE id = ?")) {
 
+			select.setInt(1, id);
+
+			try (ResultSet row = select.executeQuery()) {
+				if (!row.next()) {
+					return Optional.empty();
+				}
+
+				return Optional.of(
+					new Customer(id,
+						row.getString("first_name"),
+						row.getString("last_name"),
+						row.getString("email")));
+			}
+		} catch (final SQLException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	void store(final Customer customer) {
+		try (Connection connection = dataSource().getConnection();
+			PreparedStatement insert = connection.prepareStatement("INSERT INTO customers (id, first_name, last_name, email) VALUES (?, ?, ?, ?)")) {
+
+			insert.setInt(1, customer.id);
+			insert.setString(2, customer.firstName);
+			insert.setString(3, customer.lastName);
+			insert.setString(4, customer.email);
+
+			insert.executeUpdate();
+		} catch (final SQLException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	private static DataSource createDataSource(final JdbcDatabaseContainer<?> database) {
 		final HikariDataSource dataSource = new HikariDataSource();
 		final String jdbcUrl = database.getJdbcUrl();
 		dataSource.setJdbcUrl(jdbcUrl);
@@ -113,38 +151,5 @@ abstract class BaseDatabase {
 			.load();
 
 		flyway.migrate();
-	}
-
-	/**
-	 * Otherwise:
-	 *
-	 * <pre>
-	 * Failures (1):
-	 *   Cucumber:Data replication DB to DB:New row in source database is replicated to the destination
-	 *     ClasspathResourceSource [classpathResourceName = features/db-to-db.feature, filePosition = FilePosition [line = 23, column = 3]]
-	 *     => java.lang.RuntimeException: Failed to get driver instance for jdbcUrl=jdbc:postgresql://localhost:49538/source?loggerLevel=OFF
-	 *        all//com.zaxxer.hikari.util.DriverDataSource.<init>(DriverDataSource.java:114)
-	 *        all//com.zaxxer.hikari.pool.PoolBase.initializeDataSource(PoolBase.java:331)
-	 *        all//com.zaxxer.hikari.pool.PoolBase.<init>(PoolBase.java:114)
-	 *        all//com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:108)
-	 *        all//com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:112)
-	 *        [...]
-	 *      Caused by: java.sql.SQLException: No suitable driver
-	 *        java.sql/java.sql.DriverManager.getDriver(DriverManager.java:298)
-	 *        all//com.zaxxer.hikari.util.DriverDataSource.<init>(DriverDataSource.java:106)
-	 *        all//com.zaxxer.hikari.pool.PoolBase.initializeDataSource(PoolBase.java:331)
-	 *        all//com.zaxxer.hikari.pool.PoolBase.<init>(PoolBase.java:114)
-	 *        all//com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:108)
-	 *        [...]
-	 * </pre>
-	 *
-	 * Not sure why.
-	 */
-	private static void registerDrivers() {
-		try {
-			DriverManager.registerDriver(new Driver());
-		} catch (final SQLException e) {
-			throw new IllegalStateException("Unable to register JDBC driver with DriverManager", e);
-		}
 	}
 }

@@ -14,10 +14,10 @@
 package io.github.zregvart.dbzcamel.dbtodb.testcontainers;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import javax.sql.DataSource;
+import java.util.concurrent.TimeUnit;
 
 import io.cucumber.java8.En;
 import io.cucumber.java8.HookBody;
@@ -42,13 +42,17 @@ import org.testcontainers.utility.DockerImageName;
 
 import com.spun.util.persistence.Loader;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+
 import configuration.EndToEndTests;
-import database.SourceDatabase;
-import features.DatabaseSteps;
+import data.Customer;
+import database.MySQLDestinationDatabase;
+import database.PostgreSQLSourceDatabase;
 
 public final class EndToEnd implements En {
 
-	public EndToEnd() {
+	public EndToEnd(final PostgreSQLSourceDatabase postgresql, final MySQLDestinationDatabase mysql) {
 		final List<String> payloads = new CopyOnWriteArrayList<>();
 
 		Given("a running example", () -> {
@@ -66,8 +70,7 @@ public final class EndToEnd implements En {
 			debezium.start();
 			After(debezium::stop);
 
-			final DataSource dataSource = EndToEndTests.destinationDatabase().dataSource();
-			App.main.bind("app.dataSource", dataSource);
+			App.main.bind("app.dataSource", mysql.dataSource());
 
 			App.main.addInitialProperty("kafka.bootstrapServers", kafka.getBootstrapServers());
 
@@ -88,15 +91,21 @@ public final class EndToEnd implements En {
 			});
 
 			startCamel()
-				.thenApply(v -> debezium)
-				.thenAccept(EndToEnd::startSourceConnector)
+				.thenRun(() -> startSourceConnector(debezium, postgresql))
 				.get(); // block until everything is running
+		});
+
+		When("A row is inserted in the source database", postgresql::store);
+
+		Then("a row is present in the destination database", (final Customer customer) -> {
+			await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+				final Optional<Customer> loaded = mysql.load(customer.id);
+				assertThat(loaded).contains(customer);
+			});
 		});
 
 		After(App.main::stop);
 		After(EndToEnd.approvalTest(payloads));
-
-		DatabaseSteps.registerWith(this);
 	}
 
 	static HookBody approvalTest(final List<String> payloads) {
@@ -133,15 +142,14 @@ public final class EndToEnd implements En {
 		return camel;
 	}
 
-	static void startSourceConnector(final DebeziumContainer debezium) {
-		final SourceDatabase database = EndToEndTests.sourceDatabase();
+	static void startSourceConnector(final DebeziumContainer debezium, final PostgreSQLSourceDatabase postgresql) {
 		final ConnectorConfiguration connector = ConnectorConfiguration.create()
 			.with("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
-			.with("database.hostname", database.hostname())
-			.with("database.port", database.port())
-			.with("database.dbname", database.name())
-			.with("database.user", database.username())
-			.with("database.password", database.password())
+			.with("database.hostname", postgresql.hostname())
+			.with("database.port", postgresql.port())
+			.with("database.dbname", postgresql.name())
+			.with("database.user", postgresql.username())
+			.with("database.password", postgresql.password())
 			.with("database.server.name", "source").with("plugin.name", "pgoutput");
 
 		debezium.registerConnector("source", connector);
