@@ -13,6 +13,8 @@
  */
 package kafka;
 
+import static configuration.EndToEndTests.newCompletableFuture;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -22,9 +24,9 @@ import org.testcontainers.utility.DockerImageName;
 
 import configuration.EndToEndTests;
 
-public class Kafka implements Disposable {
+public final class Kafka implements Disposable {
 
-	private final CompletableFuture<KafkaContainer> container = new CompletableFuture<>();
+	final CompletableFuture<KafkaContainer> container = newCompletableFuture();
 
 	public Kafka() {
 		container.completeAsync(() -> new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.0"))

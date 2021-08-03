@@ -132,10 +132,6 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>io.debezium</groupId>
-			<artifactId>debezium-testing-testcontainers</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>io.cucumber</groupId>
 			<artifactId>cucumber-java8</artifactId>
 			<version>${io.cucumber.version}</version>

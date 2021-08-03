@@ -13,10 +13,24 @@
  */
 package configuration;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
 import org.testcontainers.containers.Network;
 
 public final class EndToEndTests {
 
 	public static final Network testNetwork = Network.newNetwork();
 
+	public static <T> CompletableFuture<T> newCompletableFuture() {
+
+		final Executor executor = Executors.newWorkStealingPool(5);
+
+		return new CompletableFuture<>() {
+			public Executor defaultExecutor() {
+				return executor;
+			}
+		};
+	}
 }

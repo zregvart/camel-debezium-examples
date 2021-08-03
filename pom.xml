@@ -87,7 +87,6 @@
 				<groupId>io.debezium</groupId>
 				<artifactId>debezium-testing-testcontainers</artifactId>
 				<version>${io.debezium.version}</version>
-				<scope>test</scope>
 				<exclusions>
 					<exclusion>
 						<groupId>io.quarkus</groupId>

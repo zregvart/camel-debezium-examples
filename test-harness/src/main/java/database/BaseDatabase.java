@@ -13,6 +13,8 @@
  */
 package database;
 
+import static configuration.EndToEndTests.newCompletableFuture;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -57,7 +59,7 @@ abstract class BaseDatabase implements Disposable {
 		initializeTestcontainers();
 	}
 
-	private final CompletableFuture<State> state = new CompletableFuture<>();
+	private final CompletableFuture<State> state = newCompletableFuture();
 
 	private static class State {
 

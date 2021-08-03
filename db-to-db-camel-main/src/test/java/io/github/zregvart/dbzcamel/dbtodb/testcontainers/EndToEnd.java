@@ -21,8 +21,6 @@ import java.util.concurrent.TimeUnit;
 
 import io.cucumber.java8.En;
 import io.cucumber.java8.HookBody;
-import io.debezium.testing.testcontainers.ConnectorConfiguration;
-import io.debezium.testing.testcontainers.DebeziumContainer;
 import io.github.zregvart.dbzcamel.dbtodb.App;
 
 import org.apache.camel.Message;
@@ -39,35 +37,30 @@ import org.approvaltests.namer.NamerFactory;
 import org.approvaltests.namer.NamerWrapper;
 import org.approvaltests.scrubbers.RegExScrubber;
 import org.approvaltests.scrubbers.Scrubbers;
+import org.testcontainers.containers.KafkaContainer;
 
 import com.spun.util.persistence.Loader;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-import configuration.EndToEndTests;
 import data.Customer;
 import database.MySQLDestinationDatabase;
 import database.PostgreSQLSourceDatabase;
+import debezium.Debezium;
 import kafka.Kafka;
 
 public final class EndToEnd implements En {
 
-	public EndToEnd(final PostgreSQLSourceDatabase postgresql, final MySQLDestinationDatabase mysql, final Kafka kafka) {
+	public EndToEnd(final PostgreSQLSourceDatabase postgresql, final MySQLDestinationDatabase mysql, final Debezium debezium, final Kafka kafka) {
 		final List<String> payloads = new CopyOnWriteArrayList<>();
 
 		Given("a running example", () -> {
-			@SuppressWarnings("resource")
-			final DebeziumContainer debezium = new DebeziumContainer("debezium/connect:1.6.0.Final")
-				.withKafka(kafka.container())
-				.dependsOn(kafka.container())
-				.withNetwork(EndToEndTests.testNetwork);
-			debezium.start();
-			After(debezium::stop);
-
 			App.main.bind("app.dataSource", mysql.dataSource());
 
-			App.main.addInitialProperty("kafka.bootstrapServers", kafka.container().getBootstrapServers());
+			@SuppressWarnings("resource")
+			final KafkaContainer kafkaContainer = kafka.container();
+			App.main.addInitialProperty("kafka.bootstrapServers", kafkaContainer.getBootstrapServers());
 
 			@SuppressWarnings("resource")
 			final MainConfigurationProperties configuration = App.main.configure();
@@ -86,7 +79,7 @@ public final class EndToEnd implements En {
 			});
 
 			startCamel()
-				.thenRun(() -> startSourceConnector(debezium, postgresql))
+				.thenRun(() -> debezium.startSourceConnector(postgresql))
 				.get(); // block until everything is running
 		});
 
@@ -135,19 +128,6 @@ public final class EndToEnd implements En {
 			.handle((v, t) -> camel.completeExceptionally(t));
 
 		return camel;
-	}
-
-	static void startSourceConnector(final DebeziumContainer debezium, final PostgreSQLSourceDatabase postgresql) {
-		final ConnectorConfiguration connector = ConnectorConfiguration.create()
-			.with("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
-			.with("database.hostname", postgresql.hostname())
-			.with("database.port", postgresql.port())
-			.with("database.dbname", postgresql.name())
-			.with("database.user", postgresql.username())
-			.with("database.password", postgresql.password())
-			.with("database.server.name", "source").with("plugin.name", "pgoutput");
-
-		debezium.registerConnector("source", connector);
 	}
 
 	private static Scrubber replaceTimestamps() {
