@@ -12,11 +12,11 @@
     "ts_ms": 872835240000,
     "snapshot": "true",
     "db": "source",
-    "sequence": "[null,\"23017760\"]",
+    "sequence": "[]",
     "schema": "public",
     "table": "customers",
-    "txId": 491,
-    "lsn": 23017760
+    "txId": 1,
+    "lsn": 1
   },
   "op": "r",
   "ts_ms": 872835240000

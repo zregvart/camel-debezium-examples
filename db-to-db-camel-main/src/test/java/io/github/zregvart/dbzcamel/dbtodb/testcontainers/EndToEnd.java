@@ -32,11 +32,13 @@ import org.apache.camel.main.MainConfigurationProperties;
 import org.apache.camel.main.MainListenerSupport;
 import org.approvaltests.Approvals;
 import org.approvaltests.core.Options;
+import org.approvaltests.core.Scrubber;
 import org.approvaltests.namer.ApprovalNamer;
 import org.approvaltests.namer.NamedEnvironment;
 import org.approvaltests.namer.NamerFactory;
 import org.approvaltests.namer.NamerWrapper;
 import org.approvaltests.scrubbers.RegExScrubber;
+import org.approvaltests.scrubbers.Scrubbers;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -155,7 +157,11 @@ public final class EndToEnd implements En {
 		debezium.registerConnector("source", connector);
 	}
 
-	private static RegExScrubber replaceTimestamps() {
-		return new RegExScrubber("\"ts_ms\": [0-9]{13}", "\"ts_ms\": 872835240000");
+	private static Scrubber replaceTimestamps() {
+		return Scrubbers.scrubAll(
+			new RegExScrubber("\"ts_ms\": [0-9]{13}", "\"ts_ms\": 872835240000"),
+			new RegExScrubber("\"sequence\": .*,", "\"sequence\": \"[]\","),
+			new RegExScrubber("\"txId\": [0-9]+", "\"txId\": 1"),
+			new RegExScrubber("\"lsn\": [0-9]+", "\"lsn\": 1"));
 	}
 }
