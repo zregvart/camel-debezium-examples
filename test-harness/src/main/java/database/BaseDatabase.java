@@ -13,29 +13,26 @@
  */
 package database;
 
-import static configuration.EndToEndTests.newCompletableFuture;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
 import org.flywaydb.core.Flyway;
-import org.picocontainer.Disposable;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import com.zaxxer.hikari.HikariDataSource;
 
 import configuration.EndToEndTests;
+import configuration.LifecycleSupport;
 import data.Customer;
 
-abstract class BaseDatabase implements Disposable {
+abstract class BaseDatabase {
 
 	static {
 		// Initialize Testcontainer's docker client early and on a single
@@ -59,11 +56,7 @@ abstract class BaseDatabase implements Disposable {
 		initializeTestcontainers();
 	}
 
-	private final CompletableFuture<State> state = newCompletableFuture();
-
-	private static class State {
-
-		private final JdbcDatabaseContainer<?> container;
+	static class State {
 
 		private final DataSource dataSource;
 
@@ -77,9 +70,8 @@ abstract class BaseDatabase implements Disposable {
 
 		private final String username;
 
-		public State(final JdbcDatabaseContainer<?> container, final DataSource dataSource, final String hostname, final String name, final String username,
+		public State(final DataSource dataSource, final String hostname, final String name, final String username,
 			final String password, final int port) {
-			this.container = container;
 			this.dataSource = dataSource;
 			this.hostname = hostname;
 			this.name = name;
@@ -92,27 +84,23 @@ abstract class BaseDatabase implements Disposable {
 
 	@SuppressWarnings("resource")
 	public BaseDatabase(final String classifier, final JdbcDatabaseContainer<?> container, final int databasePort) {
-		state.completeAsync(() -> {
+		complete(() -> {
 			container.withDatabaseName(classifier)
 				.withNetwork(EndToEndTests.testNetwork)
 				.withNetworkAliases(classifier)
 				.start();
+			LifecycleSupport.registerFinisher(container::stop);
 
 			final DataSource dataSource = createDataSource(container);
 
 			migrate(classifier, dataSource);
 
-			return new State(container, dataSource, classifier, container.getDatabaseName(), container.getUsername(), container.getPassword(), databasePort);
+			return new State(dataSource, classifier, container.getDatabaseName(), container.getUsername(), container.getPassword(), databasePort);
 		});
 	}
 
 	public final DataSource dataSource() {
 		return state().dataSource;
-	}
-
-	@Override
-	public final void dispose() {
-		state.thenAccept(s -> s.container.stop());
 	}
 
 	public final String hostname() {
@@ -134,6 +122,8 @@ abstract class BaseDatabase implements Disposable {
 	public final String username() {
 		return state().username;
 	}
+
+	abstract void complete(Supplier<State> with);
 
 	Optional<Customer> load(final int id) {
 		try (Connection connection = dataSource().getConnection();
@@ -157,6 +147,8 @@ abstract class BaseDatabase implements Disposable {
 		}
 	}
 
+	abstract State state();
+
 	void store(final Customer customer) {
 		try (Connection connection = dataSource().getConnection();
 			PreparedStatement insert = connection.prepareStatement("INSERT INTO customers (id, first_name, last_name, email) VALUES (?, ?, ?, ?)")) {
@@ -172,20 +164,14 @@ abstract class BaseDatabase implements Disposable {
 		}
 	}
 
-	private State state() {
-		try {
-			return state.get();
-		} catch (InterruptedException | ExecutionException e) {
-			throw new ExceptionInInitializerError(e);
-		}
-	}
-
 	private static DataSource createDataSource(final JdbcDatabaseContainer<?> database) {
 		final HikariDataSource dataSource = new HikariDataSource();
 		final String jdbcUrl = database.getJdbcUrl();
 		dataSource.setJdbcUrl(jdbcUrl);
 		dataSource.setUsername(database.getUsername());
 		dataSource.setPassword(database.getPassword());
+
+		LifecycleSupport.registerFinisher(dataSource::close);
 
 		return dataSource;
 	}
@@ -203,4 +189,5 @@ abstract class BaseDatabase implements Disposable {
 
 		flyway.migrate();
 	}
+
 }

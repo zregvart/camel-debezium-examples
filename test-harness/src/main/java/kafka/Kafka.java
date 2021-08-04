@@ -18,22 +18,29 @@ import static configuration.EndToEndTests.newCompletableFuture;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import org.picocontainer.Disposable;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import configuration.EndToEndTests;
+import configuration.LifecycleSupport;
 
-public final class Kafka implements Disposable {
+public final class Kafka {
 
-	final CompletableFuture<KafkaContainer> container = newCompletableFuture();
+	static final CompletableFuture<KafkaContainer> container = newCompletableFuture();
 
 	public Kafka() {
-		container.completeAsync(() -> new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.0"))
-			.withNetwork(EndToEndTests.testNetwork))
-			.thenAccept(KafkaContainer::start);
+		container.completeAsync(() -> {
+			@SuppressWarnings("resource")
+			final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.0")).withNetwork(EndToEndTests.testNetwork);
+
+			kafka.start();
+			LifecycleSupport.registerFinisher(kafka::stop);
+
+			return kafka;
+		});
 	}
 
+	@SuppressWarnings("static-method")
 	public KafkaContainer container() {
 		try {
 			return container.get();
@@ -42,8 +49,9 @@ public final class Kafka implements Disposable {
 		}
 	}
 
-	@Override
-	public void dispose() {
-		container.thenAccept(KafkaContainer::stop);
+	@SuppressWarnings("resource")
+	public String getBootstrapServers() {
+		return container().getBootstrapServers();
 	}
+
 }

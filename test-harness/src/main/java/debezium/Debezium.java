@@ -21,16 +21,16 @@ import java.util.concurrent.ExecutionException;
 import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
 
-import org.picocontainer.Disposable;
 import org.testcontainers.containers.KafkaContainer;
 
 import configuration.EndToEndTests;
+import configuration.LifecycleSupport;
 import database.PostgreSQLSourceDatabase;
 import kafka.Kafka;
 
-public final class Debezium implements Disposable {
+public final class Debezium {
 
-	final CompletableFuture<DebeziumContainer> container = newCompletableFuture();
+	final static CompletableFuture<DebeziumContainer> container = newCompletableFuture();
 
 	@SuppressWarnings("resource")
 	public Debezium(final Kafka kafka) {
@@ -43,16 +43,13 @@ public final class Debezium implements Disposable {
 				.withNetwork(EndToEndTests.testNetwork);
 
 			debezium.start();
+			LifecycleSupport.registerFinisher(debezium::stop);
 
 			return debezium;
 		});
 	}
 
-	@Override
-	public void dispose() {
-		container.thenAccept(DebeziumContainer::stop);
-	}
-
+	@SuppressWarnings("static-method")
 	public void startSourceConnector(final PostgreSQLSourceDatabase postgresql) {
 		final ConnectorConfiguration connector = ConnectorConfiguration.create()
 			.with("connector.class", "io.debezium.connector.postgresql.PostgresConnector")

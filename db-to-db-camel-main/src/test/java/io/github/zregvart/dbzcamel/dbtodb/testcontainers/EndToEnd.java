@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import io.cucumber.java8.En;
@@ -37,13 +38,13 @@ import org.approvaltests.namer.NamerFactory;
 import org.approvaltests.namer.NamerWrapper;
 import org.approvaltests.scrubbers.RegExScrubber;
 import org.approvaltests.scrubbers.Scrubbers;
-import org.testcontainers.containers.KafkaContainer;
 
 import com.spun.util.persistence.Loader;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import configuration.LifecycleSupport;
 import data.Customer;
 import database.MySQLDestinationDatabase;
 import database.PostgreSQLSourceDatabase;
@@ -52,35 +53,44 @@ import kafka.Kafka;
 
 public final class EndToEnd implements En {
 
+	private static CompletableFuture<BaseMainSupport> camel = new CompletableFuture<>();
+
 	public EndToEnd(final PostgreSQLSourceDatabase postgresql, final MySQLDestinationDatabase mysql, final Debezium debezium, final Kafka kafka) {
 		final List<String> payloads = new CopyOnWriteArrayList<>();
 
 		Given("a running example", () -> {
-			App.main.bind("app.dataSource", mysql.dataSource());
+			camel.completeAsync(() -> {
+				App.main.bind("app.dataSource", mysql.dataSource());
 
-			@SuppressWarnings("resource")
-			final KafkaContainer kafkaContainer = kafka.container();
-			App.main.addInitialProperty("kafka.bootstrapServers", kafkaContainer.getBootstrapServers());
+				App.main.addInitialProperty("kafka.bootstrapServers", kafka.getBootstrapServers());
 
-			@SuppressWarnings("resource")
-			final MainConfigurationProperties configuration = App.main.configure();
+				final MainConfigurationProperties configuration = App.main.configure();
 
-			configuration.addRoutesBuilder(new EndpointRouteBuilder() {
-				@Override
-				public void configure() throws Exception {
-					from(kafka("source.public.customers").brokers("{{kafka.bootstrapServers}}").clientId("approval-test"))
-						.process(exchange -> {
-							final Message message = exchange.getMessage();
-							final String payload = message.getBody(String.class);
-							payloads.add(payload);
-						})
-						.routeId("approval-tests");
+				configuration.addRoutesBuilder(new EndpointRouteBuilder() {
+					@Override
+					public void configure() throws Exception {
+						from(kafka("source.public.customers").brokers("{{kafka.bootstrapServers}}").clientId("approval-test"))
+							.process(exchange -> {
+								final Message message = exchange.getMessage();
+								final String payload = message.getBody(String.class);
+								payloads.add(payload);
+							})
+							.routeId("approval-tests");
+					}
+				});
+
+				try {
+					startCamel()
+						.thenRun(() -> debezium.startSourceConnector(postgresql))
+						.get();
+				} catch (InterruptedException | ExecutionException e) {
+					throw new ExceptionInInitializerError(e);
 				}
+
+				return App.main;
 			});
 
-			startCamel()
-				.thenRun(() -> debezium.startSourceConnector(postgresql))
-				.get(); // block until everything is running
+			camel.get();
 		});
 
 		When("A row is inserted in the source database", postgresql::store);
@@ -92,7 +102,6 @@ public final class EndToEnd implements En {
 			});
 		});
 
-		After(App.main::stop);
 		After(EndToEnd.approvalTest(payloads));
 	}
 
@@ -115,19 +124,20 @@ public final class EndToEnd implements En {
 	}
 
 	static CompletableFuture<BaseMainSupport> startCamel() {
-		final CompletableFuture<BaseMainSupport> camel = new CompletableFuture<>();
+		final CompletableFuture<BaseMainSupport> futureCamel = new CompletableFuture<>();
 
 		App.main.addMainListener(new MainListenerSupport() {
 			@Override
 			public void afterStart(final BaseMainSupport main) {
-				camel.complete(main);
+				futureCamel.complete(main);
+				LifecycleSupport.registerFinisher(App.main::stop);
 			}
 		});
 
 		CompletableFuture.runAsync(App::main)
-			.handle((v, t) -> camel.completeExceptionally(t));
+			.handle((v, t) -> futureCamel.completeExceptionally(t));
 
-		return camel;
+		return futureCamel;
 	}
 
 	private static Scrubber replaceTimestamps() {

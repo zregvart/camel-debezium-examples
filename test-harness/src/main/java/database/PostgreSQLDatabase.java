@@ -13,18 +13,39 @@
  */
 package database;
 
+import static configuration.EndToEndTests.newCompletableFuture;
+
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
 import org.postgresql.Driver;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 abstract class PostgreSQLDatabase extends BaseDatabase {
 
+	private static final CompletableFuture<State> state = newCompletableFuture();
+
 	@SuppressWarnings("resource")
 	PostgreSQLDatabase(final String classifier) {
 		super(classifier, postgres(), PostgreSQLContainer.POSTGRESQL_PORT);
 		registerDriver();
+	}
+
+	@Override
+	final void complete(final Supplier<State> with) {
+		state.completeAsync(with);
+	}
+
+	@Override
+	final State state() {
+		try {
+			return state.get();
+		} catch (InterruptedException | ExecutionException e) {
+			throw new ExceptionInInitializerError(e);
+		}
 	}
 
 	private static PostgreSQLContainer<?> postgres() {

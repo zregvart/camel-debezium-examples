@@ -13,13 +13,34 @@
  */
 package database;
 
+import static configuration.EndToEndTests.newCompletableFuture;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
+
 import org.testcontainers.containers.MySQLContainer;
 
 abstract class MySQLDatabase extends BaseDatabase {
+
+	private static final CompletableFuture<State> state = newCompletableFuture();
 
 	@SuppressWarnings("resource")
 	MySQLDatabase(final String classifier) {
 		super(classifier, new MySQLContainer<>("mysql:8"), MySQLContainer.MYSQL_PORT);
 	}
 
+	@Override
+	final void complete(final Supplier<State> with) {
+		state.completeAsync(with);
+	}
+
+	@Override
+	final State state() {
+		try {
+			return state.get();
+		} catch (InterruptedException | ExecutionException e) {
+			throw new ExceptionInInitializerError(e);
+		}
+	}
 }
