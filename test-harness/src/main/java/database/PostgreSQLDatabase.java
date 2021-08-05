@@ -13,7 +13,7 @@
  */
 package database;
 
-import static configuration.EndToEndTests.newCompletableFuture;
+import static configuration.Async.newCompletableFuture;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -26,7 +26,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 abstract class PostgreSQLDatabase extends BaseDatabase {
 
-	private static final CompletableFuture<State> state = newCompletableFuture();
+	private static final CompletableFuture<State> STATE = newCompletableFuture();
 
 	@SuppressWarnings("resource")
 	PostgreSQLDatabase(final String classifier) {
@@ -36,13 +36,13 @@ abstract class PostgreSQLDatabase extends BaseDatabase {
 
 	@Override
 	final void complete(final Supplier<State> with) {
-		state.completeAsync(with);
+		STATE.completeAsync(with);
 	}
 
 	@Override
 	final State state() {
 		try {
-			return state.get();
+			return STATE.get();
 		} catch (InterruptedException | ExecutionException e) {
 			throw new ExceptionInInitializerError(e);
 		}

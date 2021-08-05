@@ -21,3 +21,5 @@ CREATE
 			email VARCHAR(100) NOT NULL,
 			CONSTRAINT customers_pk PRIMARY KEY(id)
 		);
+
+ALTER TABLE customers REPLICA IDENTITY FULL;

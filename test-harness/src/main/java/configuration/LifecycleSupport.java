@@ -23,7 +23,7 @@ import io.cucumber.plugin.event.TestRunFinished;
 
 public final class LifecycleSupport implements ConcurrentEventListener {
 
-	private static final List<Finisher> finishers = new CopyOnWriteArrayList<>();
+	private static final List<Finisher> FINISHERS = new CopyOnWriteArrayList<>();
 
 	@FunctionalInterface
 	public interface Finisher {
@@ -36,13 +36,13 @@ public final class LifecycleSupport implements ConcurrentEventListener {
 	}
 
 	private void handleTestRunFinished(@SuppressWarnings("unused") final TestRunFinished finished) {
-		for (final ListIterator<Finisher> i = finishers.listIterator(finishers.size()); i.hasPrevious();) {
+		for (final ListIterator<Finisher> i = FINISHERS.listIterator(FINISHERS.size()); i.hasPrevious();) {
 			final Finisher finisher = i.previous();
 			finisher.finish();
 		}
 	}
 
 	public static void registerFinisher(final Finisher finisher) {
-		finishers.add(finisher);
+		FINISHERS.add(finisher);
 	}
 }

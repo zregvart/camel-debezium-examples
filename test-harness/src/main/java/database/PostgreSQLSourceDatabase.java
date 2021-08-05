@@ -25,4 +25,9 @@ public final class PostgreSQLSourceDatabase extends PostgreSQLDatabase {
 	public void store(final Customer customer) {
 		super.store(customer);
 	}
+
+	@Override
+	public void update(final Customer customer) {
+		super.update(customer);
+	}
 }

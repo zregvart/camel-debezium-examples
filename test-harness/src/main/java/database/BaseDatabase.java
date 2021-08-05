@@ -86,7 +86,7 @@ abstract class BaseDatabase {
 	public BaseDatabase(final String classifier, final JdbcDatabaseContainer<?> container, final int databasePort) {
 		complete(() -> {
 			container.withDatabaseName(classifier)
-				.withNetwork(EndToEndTests.testNetwork)
+				.withNetwork(EndToEndTests.TEST_NETWORK)
 				.withNetworkAliases(classifier)
 				.start();
 			LifecycleSupport.registerFinisher(container::stop);
@@ -159,6 +159,21 @@ abstract class BaseDatabase {
 			insert.setString(4, customer.email);
 
 			insert.executeUpdate();
+		} catch (final SQLException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	void update(final Customer customer) {
+		try (Connection connection = dataSource().getConnection();
+			PreparedStatement update = connection.prepareStatement("UPDATE customers SET first_name = ?, last_name = ?, email = ? WHERE id = ?")) {
+
+			update.setString(1, customer.firstName);
+			update.setString(2, customer.lastName);
+			update.setString(3, customer.email);
+			update.setInt(4, customer.id);
+
+			update.executeUpdate();
 		} catch (final SQLException e) {
 			throw new AssertionError(e);
 		}

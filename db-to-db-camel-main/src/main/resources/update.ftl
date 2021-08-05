@@ -13,10 +13,16 @@
     limitations under the License.
 
 -->
-<#import "insert.ftl" as i>
-<#import "update.ftl" as u>
-<#if (body['before']!{})?size == 0>
-  <@i.insert body['source']['table'] body['after']?keys />
-<#elseif (body['after']!{})?size != 0>
-  <@u.update body['source']['table'] headers['kafka.KEY'] body['after']?keys />
-</#if>
+<#macro update table key_map columns>
+<#assign key_json = key_map?eval_json>
+<#assign keys = key_json?keys>
+UPDATE ${table} SET
+<#list columns as column>
+  ${column} = :?${column}<#sep>,
+</#list>
+
+WHERE
+<#list keys as key>
+  ${key} = :?${key}<#sep> AND </#sep><#rt>
+</#list>
+</#macro>

@@ -13,7 +13,7 @@
  */
 package debezium;
 
-import static configuration.EndToEndTests.newCompletableFuture;
+import static configuration.Async.newCompletableFuture;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -30,17 +30,19 @@ import kafka.Kafka;
 
 public final class Debezium {
 
-	final static CompletableFuture<DebeziumContainer> container = newCompletableFuture();
+	final static CompletableFuture<DebeziumContainer> CONTAINER = newCompletableFuture();
+
+	private static final String CONNECTOR_NAME = "source";
 
 	@SuppressWarnings("resource")
 	public Debezium(final Kafka kafka) {
-		container.completeAsync(() -> {
+		CONTAINER.completeAsync(() -> {
 			final KafkaContainer kafkaContainer = kafka.container();
 
 			final DebeziumContainer debezium = new DebeziumContainer("debezium/connect:1.6.0.Final")
 				.withKafka(kafkaContainer)
 				.dependsOn(kafkaContainer)
-				.withNetwork(EndToEndTests.testNetwork);
+				.withNetwork(EndToEndTests.TEST_NETWORK);
 
 			debezium.start();
 			LifecycleSupport.registerFinisher(debezium::stop);
@@ -50,7 +52,7 @@ public final class Debezium {
 	}
 
 	@SuppressWarnings("static-method")
-	public void startSourceConnector(final PostgreSQLSourceDatabase postgresql) {
+	public void startConnectorFor(final PostgreSQLSourceDatabase postgresql) {
 		final ConnectorConfiguration connector = ConnectorConfiguration.create()
 			.with("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
 			.with("database.hostname", postgresql.hostname())
@@ -58,12 +60,13 @@ public final class Debezium {
 			.with("database.dbname", postgresql.name())
 			.with("database.user", postgresql.username())
 			.with("database.password", postgresql.password())
-			.with("database.server.name", "source").with("plugin.name", "pgoutput");
+			.with("database.server.name", CONNECTOR_NAME)
+			.with("plugin.name", "pgoutput");
 
 		try {
 			@SuppressWarnings("resource")
-			final DebeziumContainer debezium = container.get();
-			debezium.registerConnector("source", connector);
+			final DebeziumContainer debezium = CONTAINER.get();
+			debezium.registerConnector(CONNECTOR_NAME, connector);
 		} catch (InterruptedException | ExecutionException e) {
 			throw new ExceptionInInitializerError(e);
 		}

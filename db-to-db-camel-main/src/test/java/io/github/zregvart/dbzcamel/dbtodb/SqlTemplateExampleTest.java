@@ -19,7 +19,7 @@ import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -41,9 +41,9 @@ public class SqlTemplateExampleTest {
 
 	private static final String APPROVED_JSON = ".approved.json";
 
-	final Configuration freemarker;
+	private static final ObjectMapper MAPPER = new ObjectMapper();
 
-	final ObjectMapper jackson = new ObjectMapper();
+	final Configuration freemarker;
 
 	SqlTemplateExampleTest() throws IOException {
 		freemarker = new Configuration(Configuration.getVersion());
@@ -54,16 +54,24 @@ public class SqlTemplateExampleTest {
 
 	@ParameterizedTest(name = "{index}: {0}")
 	@MethodSource("payloadsFromApprovalTests")
-	void shouldGenerateExpectedStatements(final String baseFileName, final String payload) throws TemplateNotFoundException, TemplateException, IOException {
-		final Map<?, ?> body = jackson.readValue(payload, Map.class);
+	void shouldGenerateExpectedStatements(final String baseFileName, final String approvedPayload)
+		throws TemplateNotFoundException, TemplateException, IOException {
+		final Map<?, ?>[] payloadAry = MAPPER.readValue(approvedPayload, Map[].class);
 
-		try (var out = new StringWriter()) {
-			freemarker.getTemplate("sql.ftl").process(Collections.singletonMap("body", body), out);
+		int c = 0;
+		for (final Map<?, ?> payload : payloadAry) {
+			try (var out = new StringWriter()) {
+				final Map<String, Object> data = new HashMap<>();
+				data.put("body", payload.get("body"));
+				data.put("headers", payload.get("headers"));
 
-			final var sql = out.toString();
+				freemarker.getTemplate("sql.ftl").process(data, out);
 
-			try (NamedEnvironment env = NamerFactory.withParameters(baseFileName)) {
-				Approvals.verify(sql);
+				final var sql = out.toString();
+
+				try (NamedEnvironment env = NamerFactory.withParameters(baseFileName, c++)) {
+					Approvals.verify(sql);
+				}
 			}
 		}
 	}

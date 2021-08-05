@@ -13,6 +13,9 @@
  */
 package features;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java8.En;
 
@@ -30,9 +33,15 @@ import data.Customer;
 
 public final class InMemorySteps {
 
+	private static final Map<Integer, Customer> DATABASE = new HashMap<>();
+
 	private static final ObjectMapper json = new ObjectMapper();
 
 	public static void registerWith(final CamelContext camel, final En en) {
+		en.Given("A row present in the source database", (final Customer customer) -> {
+			DATABASE.put(customer.id, customer);
+		});
+
 		en.When("A row is inserted in the source database", (final Customer customer) -> {
 			try (ProducerTemplate producer = camel.createProducerTemplate()) {
 				final ObjectNode record = JsonNodeFactory.instance.objectNode();
@@ -40,15 +49,23 @@ public final class InMemorySteps {
 				record.putPOJO("after", customer);
 
 				producer.sendBody("direct:receive", json.writer().writeValueAsBytes(record));
+				DATABASE.put(customer.id, customer);
+			}
+		});
+
+		en.When("A row is updated in the source database", (final Customer customer) -> {
+			try (ProducerTemplate producer = camel.createProducerTemplate()) {
+				final ObjectNode record = JsonNodeFactory.instance.objectNode();
+				record.putObject("source").put("table", "customers");
+				record.putPOJO("before", DATABASE.get(customer.id));
+				record.putPOJO("after", customer);
+
+				producer.sendBodyAndHeader("direct:receive", json.writer().writeValueAsBytes(record), "kafka.KEY", String.format("{\"id\":%d}", customer.id));
 			}
 		});
 
 		en.Then("a row is present in the destination database", (final DataTable dataTable) -> {
-			@SuppressWarnings("resource")
-			final MockEndpoint jdbc = camel.getEndpoint("mock:jdbc", MockEndpoint.class);
-
-			assertThat(jdbc.getReceivedCounter()).isOne();
-			assertThat(jdbc.getReceivedExchanges().get(0).getIn().getBody(String.class)).isEqualTo("INSERT INTO customers (\n"
+			assertProcessedSql(camel, "INSERT INTO customers (\n"
 				+ "  email,\n"
 				+ "  id,\n"
 				+ "  first_name,\n"
@@ -60,5 +77,25 @@ public final class InMemorySteps {
 				+ "  :?last_name\n"
 				+ ")");
 		});
+
+		en.Then("an existing row is updated in the destination database", (final DataTable dataTable) -> {
+			assertProcessedSql(camel, "UPDATE customers SET\n"
+				+ "  email = :?email,\n"
+				+ "  id = :?id,\n"
+				+ "  first_name = :?first_name,\n"
+				+ "  last_name = :?last_name\n"
+				+ "WHERE\n"
+				+ "  id = :?id");
+		});
+
+		en.After(DATABASE::clear);
+	}
+
+	private static void assertProcessedSql(final CamelContext camel, final String statement) {
+		@SuppressWarnings("resource")
+		final MockEndpoint jdbc = camel.getEndpoint("mock:jdbc", MockEndpoint.class);
+
+		assertThat(jdbc.getReceivedCounter()).isOne();
+		assertThat(jdbc.getReceivedExchanges().get(0).getIn().getBody(String.class)).isEqualTo(statement);
 	}
 }

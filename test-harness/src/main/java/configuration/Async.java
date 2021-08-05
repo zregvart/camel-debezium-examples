@@ -11,25 +11,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package database;
+package configuration;
 
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
-import data.Customer;
+public final class Async {
 
-public final class MySQLDestinationDatabase extends MySQLDatabase {
+	public static final Executor EXECUTOR = Executors.newWorkStealingPool(5);
 
-	public MySQLDestinationDatabase() {
-		super("destination");
+	private Async() {
+		// utility class
 	}
 
-	@Override
-	public Optional<Customer> load(final int id) {
-		return super.load(id);
-	}
+	public static <T> CompletableFuture<T> newCompletableFuture() {
 
-	@Override
-	public void store(final Customer customer) {
-		super.store(customer);
+		return new CompletableFuture<>() {
+			public Executor defaultExecutor() {
+				return EXECUTOR;
+			}
+		};
 	}
 }

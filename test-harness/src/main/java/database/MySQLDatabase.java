@@ -13,7 +13,7 @@
  */
 package database;
 
-import static configuration.EndToEndTests.newCompletableFuture;
+import static configuration.Async.newCompletableFuture;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +23,7 @@ import org.testcontainers.containers.MySQLContainer;
 
 abstract class MySQLDatabase extends BaseDatabase {
 
-	private static final CompletableFuture<State> state = newCompletableFuture();
+	private static final CompletableFuture<State> STATE = newCompletableFuture();
 
 	@SuppressWarnings("resource")
 	MySQLDatabase(final String classifier) {
@@ -32,13 +32,13 @@ abstract class MySQLDatabase extends BaseDatabase {
 
 	@Override
 	final void complete(final Supplier<State> with) {
-		state.completeAsync(with);
+		STATE.completeAsync(with);
 	}
 
 	@Override
 	final State state() {
 		try {
-			return state.get();
+			return STATE.get();
 		} catch (InterruptedException | ExecutionException e) {
 			throw new ExceptionInInitializerError(e);
 		}

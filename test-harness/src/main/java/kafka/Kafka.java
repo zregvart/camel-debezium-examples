@@ -13,7 +13,7 @@
  */
 package kafka;
 
-import static configuration.EndToEndTests.newCompletableFuture;
+import static configuration.Async.newCompletableFuture;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -26,12 +26,12 @@ import configuration.LifecycleSupport;
 
 public final class Kafka {
 
-	static final CompletableFuture<KafkaContainer> container = newCompletableFuture();
+	static final CompletableFuture<KafkaContainer> CONTAINER = newCompletableFuture();
 
 	public Kafka() {
-		container.completeAsync(() -> {
+		CONTAINER.completeAsync(() -> {
 			@SuppressWarnings("resource")
-			final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.0")).withNetwork(EndToEndTests.testNetwork);
+			final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.0")).withNetwork(EndToEndTests.TEST_NETWORK);
 
 			kafka.start();
 			LifecycleSupport.registerFinisher(kafka::stop);
@@ -43,7 +43,7 @@ public final class Kafka {
 	@SuppressWarnings("static-method")
 	public KafkaContainer container() {
 		try {
-			return container.get();
+			return CONTAINER.get();
 		} catch (InterruptedException | ExecutionException e) {
 			throw new ExceptionInInitializerError(e);
 		}
