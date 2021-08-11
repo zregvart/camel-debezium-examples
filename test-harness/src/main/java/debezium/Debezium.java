@@ -16,12 +16,17 @@ package debezium;
 import static configuration.Async.newCompletableFuture;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
 
 import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.containers.output.OutputFrame;
 
 import configuration.EndToEndTests;
 import configuration.LifecycleSupport;
@@ -34,6 +39,47 @@ public final class Debezium {
 
 	private static final String CONNECTOR_NAME = "source";
 
+	private static class LogConnectorStreamingGate implements Consumer<OutputFrame> {
+
+		private static final LogConnectorStreamingGate INSTANCE = new LogConnectorStreamingGate();
+
+		private static final Pattern STREAMING = Pattern.compile("^.*INFO\\s+\\w+\\|(?<connectorName>\\w+)\\|streaming\\s+Starting streaming.*$");
+
+		private final ConcurrentHashMap<String, CompletableFuture<Boolean>> streamingConnectors = new ConcurrentHashMap<>();
+
+		@Override
+		public void accept(final OutputFrame frame) {
+			final String log = frame.getUtf8String().trim();
+			final Matcher matcher = STREAMING.matcher(log);
+
+			final boolean matches = matcher.matches();
+			if (matches) {
+				final String connectorName = matcher.group("connectorName");
+				streamingConnectors.compute(connectorName, (name, existing) -> {
+					CompletableFuture<Boolean> completion = existing;
+					if (completion == null) {
+						completion = CompletableFuture.completedFuture(true);
+					} else {
+						completion.complete(true);
+					}
+
+					return completion;
+				});
+			}
+		}
+
+		public void awaitStreaming(final String connectorName) {
+			final CompletableFuture<Boolean> completion = streamingConnectors.computeIfAbsent(connectorName, name -> new CompletableFuture<>());
+
+			try {
+				completion.get();
+			} catch (InterruptedException | ExecutionException e) {
+				throw new IllegalStateException(e);
+			}
+		}
+
+	}
+
 	@SuppressWarnings("resource")
 	public Debezium(final Kafka kafka) {
 		CONTAINER.completeAsync(() -> {
@@ -42,7 +88,8 @@ public final class Debezium {
 			final DebeziumContainer debezium = new DebeziumContainer("debezium/connect:1.6.0.Final")
 				.withKafka(kafkaContainer)
 				.dependsOn(kafkaContainer)
-				.withNetwork(EndToEndTests.TEST_NETWORK);
+				.withNetwork(EndToEndTests.TEST_NETWORK)
+				.withLogConsumer(LogConnectorStreamingGate.INSTANCE);
 
 			debezium.start();
 			LifecycleSupport.registerFinisher(debezium::stop);
@@ -67,6 +114,7 @@ public final class Debezium {
 			@SuppressWarnings("resource")
 			final DebeziumContainer debezium = CONTAINER.get();
 			debezium.registerConnector(CONNECTOR_NAME, connector);
+			LogConnectorStreamingGate.INSTANCE.awaitStreaming(CONNECTOR_NAME);
 		} catch (InterruptedException | ExecutionException e) {
 			throw new ExceptionInInitializerError(e);
 		}

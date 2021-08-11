@@ -191,10 +191,11 @@ public final class EndToEnd implements En {
 		CompletableFuture.runAsync(App::main, Async.EXECUTOR)
 			.handle((v, t) -> camel.completeExceptionally(t));
 
-		camel.thenRun(() -> debezium.startConnectorFor(postgresql));
-
 		try {
-			return camel.get();
+			return camel.thenApply(c -> {
+				debezium.startConnectorFor(postgresql);
+				return c;
+			}).get();
 		} catch (InterruptedException | ExecutionException e) {
 			throw new IllegalStateException(e);
 		}
