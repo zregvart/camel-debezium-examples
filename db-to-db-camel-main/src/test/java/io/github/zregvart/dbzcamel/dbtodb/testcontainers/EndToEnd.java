@@ -136,9 +136,9 @@ public final class EndToEnd implements En {
 				.get();
 		});
 
-		Given("A row present in the source database", postgresql::store);
+		Given("A row present in the source database", postgresql::create);
 
-		When("A row is inserted in the source database", postgresql::store);
+		When("A row is inserted in the source database", postgresql::create);
 
 		final StepDefinitionBody.A1<Customer> assertRowPresent = (final Customer customer) -> {
 			await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {

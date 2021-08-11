@@ -29,7 +29,7 @@ public final class MySQLDestinationDatabase extends MySQLDatabase {
 	}
 
 	@Override
-	public void store(final Customer customer) {
-		super.store(customer);
+	public void create(final Customer customer) {
+		super.create(customer);
 	}
 }

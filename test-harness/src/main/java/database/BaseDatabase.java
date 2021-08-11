@@ -125,6 +125,21 @@ abstract class BaseDatabase {
 
 	abstract void complete(Supplier<State> with);
 
+	void create(final Customer customer) {
+		try (Connection connection = dataSource().getConnection();
+			PreparedStatement insert = connection.prepareStatement("INSERT INTO customers (id, first_name, last_name, email) VALUES (?, ?, ?, ?)")) {
+
+			insert.setInt(1, customer.id);
+			insert.setString(2, customer.firstName);
+			insert.setString(3, customer.lastName);
+			insert.setString(4, customer.email);
+
+			insert.executeUpdate();
+		} catch (final SQLException e) {
+			throw new AssertionError(e);
+		}
+	}
+
 	Optional<Customer> load(final int id) {
 		try (Connection connection = dataSource().getConnection();
 			PreparedStatement select = connection.prepareStatement("SELECT id, first_name, last_name, email FROM customers WHERE id = ?")) {
@@ -148,21 +163,6 @@ abstract class BaseDatabase {
 	}
 
 	abstract State state();
-
-	void store(final Customer customer) {
-		try (Connection connection = dataSource().getConnection();
-			PreparedStatement insert = connection.prepareStatement("INSERT INTO customers (id, first_name, last_name, email) VALUES (?, ?, ?, ?)")) {
-
-			insert.setInt(1, customer.id);
-			insert.setString(2, customer.firstName);
-			insert.setString(3, customer.lastName);
-			insert.setString(4, customer.email);
-
-			insert.executeUpdate();
-		} catch (final SQLException e) {
-			throw new AssertionError(e);
-		}
-	}
 
 	void update(final Customer customer) {
 		try (Connection connection = dataSource().getConnection();
