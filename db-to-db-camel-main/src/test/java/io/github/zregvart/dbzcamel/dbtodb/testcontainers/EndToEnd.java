@@ -20,9 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.cucumber.java8.En;
 import io.cucumber.java8.HookBody;
@@ -75,6 +78,8 @@ public final class EndToEnd implements En {
 
 		private final String id;
 
+		private final BlockingQueue<Payload> payloadQueue = new ArrayBlockingQueue<>(5);
+
 		private final List<Payload> payloads;
 
 		private GatherPayloads(final List<Payload> payloads, final String boostrapServers) {
@@ -89,8 +94,13 @@ public final class EndToEnd implements En {
 				.routeId(id)
 				.process(exchange -> {
 					final Message message = exchange.getMessage();
-					final String payload = message.getBody(String.class);
-					payloads.add(new Payload(message.getHeaders(), MAPPER.readTree(payload)));
+					final String rawPayload = message.getBody(String.class);
+					if (rawPayload == null) {
+						return;
+					}
+					final Payload payload = new Payload(message.getHeaders(), MAPPER.readTree(rawPayload));
+					payloads.add(payload);
+					payloadQueue.add(payload);
 				});
 
 			camelContext = getContext();
@@ -129,6 +139,7 @@ public final class EndToEnd implements En {
 	public EndToEnd(final PostgreSQLSourceDatabase postgresql, final MySQLDestinationDatabase mysql, final Debezium debezium, final Kafka kafka) {
 		final List<Payload> payloads = new ArrayList<>();
 		final GatherPayloads gatherPayloads = new GatherPayloads(payloads, kafka.getBootstrapServers());
+		final AtomicBoolean expectingPayload = new AtomicBoolean();
 
 		Given("a running example", () -> {
 			camel.completeAsync(() -> runExample(postgresql, mysql, kafka, debezium))
@@ -136,9 +147,15 @@ public final class EndToEnd implements En {
 				.get();
 		});
 
-		Given("A row present in the source database", postgresql::create);
+		Given("A row present in the source database", (final Customer customer) -> {
+			expectingPayload.set(true);
+			postgresql.create(customer);
+		});
 
-		When("A row is inserted in the source database", postgresql::create);
+		When("A row is inserted in the source database", (final Customer customer) -> {
+			expectingPayload.set(true);
+			postgresql.create(customer);
+		});
 
 		final StepDefinitionBody.A1<Customer> assertRowPresent = (final Customer customer) -> {
 			await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -149,9 +166,19 @@ public final class EndToEnd implements En {
 
 		Then("a row is present in the destination database", assertRowPresent);
 
-		When("A row is updated in the source database", postgresql::update);
+		When("A row is updated in the source database", (final Customer customer) -> {
+			expectingPayload.set(true);
+			postgresql.update(customer);
+		});
 
 		Then("an existing row is updated in the destination database", assertRowPresent);
+
+		AfterStep(() -> {
+			if (expectingPayload.compareAndSet(true, false)) {
+				// wait for message to be delivered in order to proceed
+				gatherPayloads.payloadQueue.take();
+			}
+		});
 
 		After(gatherPayloads::stop);
 		After(approvalTest(payloads));
