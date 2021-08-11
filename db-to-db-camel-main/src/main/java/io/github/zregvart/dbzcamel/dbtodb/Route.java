@@ -23,6 +23,10 @@ public final class Route extends EndpointRouteBuilder {
 			.routeId("kafka-to-db")
 			.unmarshal().json()
 			.setHeader("CamelJdbcParameters").simple("${body[after]}")
+			.choice()
+			.when().simple("${headers['CamelJdbcParameters']} == null")
+			.setHeader("CamelJdbcParameters").simple("${body[before]}")
+			.end()
 			.to(freemarker("sql.ftl"))
 			.to(jdbc("app.dataSource").allowNamedParameters(true).useHeadersAsParameters(true));
 	}

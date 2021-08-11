@@ -142,6 +142,18 @@ abstract class BaseDatabase {
 		}
 	}
 
+	void delete(final int id) {
+		try (Connection connection = dataSource().getConnection();
+			PreparedStatement delete = connection.prepareStatement("DELETE FROM customers WHERE id = ?")) {
+
+			delete.setInt(1, id);
+
+			assertThat(delete.executeUpdate()).as("Should delete one row").isOne();
+		} catch (final SQLException e) {
+			throw new AssertionError(e);
+		}
+	}
+
 	Optional<Customer> load(final int id) {
 		try (Connection connection = dataSource().getConnection();
 			PreparedStatement select = connection.prepareStatement("SELECT id, first_name, last_name, email FROM customers WHERE id = ?")) {

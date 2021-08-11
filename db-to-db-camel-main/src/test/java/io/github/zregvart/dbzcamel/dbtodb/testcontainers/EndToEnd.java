@@ -173,6 +173,18 @@ public final class EndToEnd implements En {
 
 		Then("an existing row is updated in the destination database", assertRowPresent);
 
+		When("A row with the id of {int} deleted from the source database", (final Integer id) -> {
+			expectingPayload.set(true);
+			postgresql.delete(id);
+		});
+
+		Then("an row with the id of {int} doesn't exist in the destination database", (final Integer id) -> {
+			await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+				final Optional<Customer> loaded = mysql.load(id);
+				assertThat(loaded).isEmpty();
+			});
+		});
+
 		AfterStep(() -> {
 			if (expectingPayload.compareAndSet(true, false)) {
 				// wait for message to be delivered in order to proceed

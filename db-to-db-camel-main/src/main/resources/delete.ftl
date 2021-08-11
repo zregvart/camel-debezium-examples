@@ -13,17 +13,12 @@
     limitations under the License.
 
 -->
-<#import "insert.ftl" as i>
-<#import "update.ftl" as u>
-<#import "delete.ftl" as d>
-<#switch body['op']>
-  <#case 'c'>
-    <@i.insert body['source']['table'] body['after']?keys />
-    <#break>
-  <#case 'u'>
-    <@u.update body['source']['table'] headers['kafka.KEY'] body['after']?keys />
-    <#break>
-  <#case 'd'>
-    <@d.delete body['source']['table'] headers['kafka.KEY'] />
-    <#break>
-</#switch>
+<#macro delete table key_map>
+<#assign key_json = key_map?eval_json>
+<#assign keys = key_json?keys>
+DELETE FROM ${table}
+WHERE
+<#list keys as key>
+  ${key} = :?${key}<#sep> AND </#sep><#rt>
+</#list>
+</#macro>

@@ -66,6 +66,19 @@ public final class InMemorySteps {
 			}
 		});
 
+		en.When("A row with the id of {int} deleted from the source database", (final Integer id) -> {
+			final Customer customer = DATABASE.remove(id);
+
+			try (ProducerTemplate producer = camel.createProducerTemplate()) {
+				final ObjectNode record = JsonNodeFactory.instance.objectNode();
+				record.putObject("source").put("table", "customers");
+				record.putPOJO("before", customer);
+				record.put("op", "d");
+
+				producer.sendBodyAndHeader("direct:receive", json.writer().writeValueAsBytes(record), "kafka.KEY", String.format("{\"id\":%d}", customer.id));
+			}
+		});
+
 		en.Then("a row is present in the destination database", (final DataTable dataTable) -> {
 			assertProcessedSql(camel, "INSERT INTO customers (\n"
 				+ "  email,\n"
@@ -86,6 +99,12 @@ public final class InMemorySteps {
 				+ "  id = :?id,\n"
 				+ "  first_name = :?first_name,\n"
 				+ "  last_name = :?last_name\n"
+				+ "WHERE\n"
+				+ "  id = :?id");
+		});
+
+		en.Then("an row with the id of {int} doesn't exist in the destination database", (final Integer id) -> {
+			assertProcessedSql(camel, "DELETE FROM customers\n"
 				+ "WHERE\n"
 				+ "  id = :?id");
 		});

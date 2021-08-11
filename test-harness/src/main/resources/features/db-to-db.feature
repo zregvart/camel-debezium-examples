@@ -40,3 +40,11 @@ Background: Example solution is deployed
     Then an existing row is updated in the destination database
       | id   | first_name | last_name | email                 |
       | 2    | Mark       | Doe       |  john.doe@example.com |
+
+  @delete
+  Scenario: Row deletions in source database are replicated to the destination database
+    Given A row present in the source database
+      | id   | first_name | last_name | email                 |
+      | 3    | John       | Doe       |  john.doe@example.com |
+    When A row with the id of 3 deleted from the source database
+    Then an row with the id of 3 doesn't exist in the destination database

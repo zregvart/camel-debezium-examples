@@ -33,14 +33,19 @@ import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
 import net.jqwik.api.arbitraries.CharacterArbitrary;
 import net.jqwik.api.arbitraries.ListArbitrary;
+import net.jqwik.api.arbitraries.MapArbitrary;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserConstants;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
 
 public class SqlTemplatePropertyTest {
+
+	private static final ObjectMapper JSON = new ObjectMapper();
 
 	private static final Set<String> RESERVED_WORDS = Stream.concat(
 		Stream.of("SEL"),
@@ -58,9 +63,14 @@ public class SqlTemplatePropertyTest {
 	}
 
 	@Property
-	boolean generatedSqlStatementsAreParsable(@ForAll("kindsOfPayloads") final Map<String, Object> payload) throws IOException, TemplateException {
+	boolean generatedSqlStatementsAreParsable(@ForAll("kindsOfPayloads") final Map<String, Object> payload,
+		@ForAll("kindsOfKeys") final Map<String, Object> keys) throws IOException, TemplateException {
 		try (StringWriter out = new StringWriter()) {
-			freemarker.getTemplate("sql.ftl").process(Collections.singletonMap("body", payload), out);
+			final Map<String, Object> data = new HashMap<>();
+			data.put("body", payload);
+			data.put("headers", Collections.singletonMap("kafka.KEY", JSON.writeValueAsString(keys)));
+
+			freemarker.getTemplate("sql.ftl").process(data, out);
 
 			final String sql = out.toString();
 			try {
@@ -103,6 +113,12 @@ public class SqlTemplatePropertyTest {
 			.ofMinLength(1)
 			.ofMaxLength(7)
 			.filter(s -> Character.isLetter(s.charAt(0)) && !RESERVED_WORDS.contains(s.toUpperCase(Locale.ENGLISH)));
+	}
+
+	@Provide
+	static MapArbitrary<String, Integer> kindsOfKeys() {
+		return Arbitraries.maps(identifier(), Arbitraries.integers())
+			.ofMinSize(1);
 	}
 
 	@Provide
