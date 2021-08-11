@@ -159,6 +159,9 @@ public final class EndToEnd implements En {
 
 	static HookBody approvalTest(final List<Payload> payloads) {
 		return scenario -> {
+			assertThat(payloads).as("No payloads received, meaning no messages were received and processed from Kafka topic. "
+				+ "Would expect at least one message to be received for the test to be valid.").isNotEmpty();
+
 			final Loader<ApprovalNamer> initial = Approvals.namerCreater;
 
 			Approvals.namerCreater = () -> {
