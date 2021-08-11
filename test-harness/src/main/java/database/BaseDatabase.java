@@ -28,6 +28,8 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import com.zaxxer.hikari.HikariDataSource;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import configuration.EndToEndTests;
 import configuration.LifecycleSupport;
 import data.Customer;
@@ -134,7 +136,7 @@ abstract class BaseDatabase {
 			insert.setString(3, customer.lastName);
 			insert.setString(4, customer.email);
 
-			insert.executeUpdate();
+			assertThat(insert.executeUpdate()).as("Should insert one row").isOne();
 		} catch (final SQLException e) {
 			throw new AssertionError(e);
 		}
@@ -173,7 +175,7 @@ abstract class BaseDatabase {
 			update.setString(3, customer.email);
 			update.setInt(4, customer.id);
 
-			update.executeUpdate();
+			assertThat(update.executeUpdate()).as("Should update one row").isOne();
 		} catch (final SQLException e) {
 			throw new AssertionError(e);
 		}
