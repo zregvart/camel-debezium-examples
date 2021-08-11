@@ -216,6 +216,7 @@ public final class EndToEnd implements En {
 			new RegExScrubber("\"ts_ms\": [0-9]{13}", "\"ts_ms\": 872835240000"),
 			new RegExScrubber("\"CamelMessageTimestamp\": [0-9]{13}", "\"CamelMessageTimestamp\": 872835240000"),
 			new RegExScrubber("\"kafka.TIMESTAMP\": [0-9]{13}", "\"kafka.TIMESTAMP\": 872835240000"),
+			new RegExScrubber("\"kafka.OFFSET\": [0-9]+", "\"kafka.OFFSET\": 0"),
 			new RegExScrubber("\"sequence\": .*,", "\"sequence\": \"[]\","),
 			new RegExScrubber("\"txId\": [0-9]+", "\"txId\": 1"),
 			new RegExScrubber("\"lsn\": [0-9]+", "\"lsn\": 1"));

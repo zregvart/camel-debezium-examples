@@ -4,7 +4,7 @@
       "CamelMessageTimestamp": 872835240000,
       "kafka.HEADERS": [],
       "kafka.KEY": "{\"id\":2}",
-      "kafka.OFFSET": 1,
+      "kafka.OFFSET": 0,
       "kafka.PARTITION": 0,
       "kafka.TIMESTAMP": 872835240000,
       "kafka.TOPIC": "source.public.customers"
@@ -38,7 +38,7 @@
       "CamelMessageTimestamp": 872835240000,
       "kafka.HEADERS": [],
       "kafka.KEY": "{\"id\":2}",
-      "kafka.OFFSET": 2,
+      "kafka.OFFSET": 0,
       "kafka.PARTITION": 0,
       "kafka.TIMESTAMP": 872835240000,
       "kafka.TOPIC": "source.public.customers"
