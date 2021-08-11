@@ -15,8 +15,11 @@
 -->
 <#import "insert.ftl" as i>
 <#import "update.ftl" as u>
-<#if (body['before']!{})?size == 0>
-  <@i.insert body['source']['table'] body['after']?keys />
-<#elseif (body['after']!{})?size != 0>
-  <@u.update body['source']['table'] headers['kafka.KEY'] body['after']?keys />
-</#if>
+<#switch body['op']>
+  <#case 'c'>
+    <@i.insert body['source']['table'] body['after']?keys />
+    <#break>
+  <#case 'u'>
+    <@u.update body['source']['table'] headers['kafka.KEY'] body['after']?keys />
+    <#break>
+</#switch>

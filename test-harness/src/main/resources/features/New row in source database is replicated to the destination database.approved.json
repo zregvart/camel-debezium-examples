@@ -21,7 +21,7 @@
         "connector": "postgresql",
         "name": "source",
         "ts_ms": 872835240000,
-        "snapshot": "true",
+        "snapshot": "false",
         "db": "source",
         "sequence": "[]",
         "schema": "public",
@@ -29,7 +29,7 @@
         "txId": 1,
         "lsn": 1
       },
-      "op": "r",
+      "op": "c",
       "ts_ms": 872835240000
     }
   }

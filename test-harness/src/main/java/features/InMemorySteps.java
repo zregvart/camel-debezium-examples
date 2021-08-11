@@ -47,6 +47,7 @@ public final class InMemorySteps {
 				final ObjectNode record = JsonNodeFactory.instance.objectNode();
 				record.putObject("source").put("table", "customers");
 				record.putPOJO("after", customer);
+				record.put("op", "c");
 
 				producer.sendBody("direct:receive", json.writer().writeValueAsBytes(record));
 				DATABASE.put(customer.id, customer);
@@ -59,6 +60,7 @@ public final class InMemorySteps {
 				record.putObject("source").put("table", "customers");
 				record.putPOJO("before", DATABASE.get(customer.id));
 				record.putPOJO("after", customer);
+				record.put("op", "u");
 
 				producer.sendBodyAndHeader("direct:receive", json.writer().writeValueAsBytes(record), "kafka.KEY", String.format("{\"id\":%d}", customer.id));
 			}

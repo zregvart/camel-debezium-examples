@@ -31,6 +31,7 @@ import net.jqwik.api.Combinators;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import net.jqwik.api.arbitraries.CharacterArbitrary;
 import net.jqwik.api.arbitraries.ListArbitrary;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserConstants;
@@ -79,11 +80,12 @@ public class SqlTemplatePropertyTest {
 			.list().ofMinSize(1);
 	}
 
-	static Map<String, Object> createPayload(final String tableName, final List<String> columnNames) {
+	static Map<String, Object> createPayload(final String tableName, final List<String> columnNames, final Character operation) {
 		final Map<String, Object> payload = new HashMap<>();
 		final Map<String, Object> source = new HashMap<>();
 		source.put("table", tableName);
 		payload.put("source", source);
+		payload.put("op", operation.toString());
 
 		final Map<String, Object> after = new HashMap<>();
 		payload.put("after", after);
@@ -105,8 +107,12 @@ public class SqlTemplatePropertyTest {
 
 	@Provide
 	static Arbitrary<Map<String, Object>> kindsOfPayloads() {
-		return Combinators.combine(tableName(), columnNames())
+		return Combinators.combine(tableName(), columnNames(), operations())
 			.as(SqlTemplatePropertyTest::createPayload);
+	}
+
+	static CharacterArbitrary operations() {
+		return Arbitraries.chars().with('c', 'u', 'd');
 	}
 
 	static Arbitrary<String> tableName() {
