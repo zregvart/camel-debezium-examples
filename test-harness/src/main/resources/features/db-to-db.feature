@@ -20,7 +20,7 @@ Feature: Data replication DB to DB
 Background: Example solution is deployed
   Given a running example
 
-  @create
+  @dml @create
   Scenario: New row in source database is replicated to the destination database
     When A row is inserted in the source database
       | id   | first_name | last_name | email                 |
@@ -29,7 +29,7 @@ Background: Example solution is deployed
       | id   | first_name | last_name | email                 |
       | 1    | John       | Doe       |  john.doe@example.com |
 
-  @update
+  @dml @update
   Scenario: Row updates in source database is replicated to the destination database
     Given A row present in the source database
       | id   | first_name | last_name | email                 |
@@ -41,7 +41,7 @@ Background: Example solution is deployed
       | id   | first_name | last_name | email                 |
       | 2    | Mark       | Doe       |  john.doe@example.com |
 
-  @delete
+  @dml @delete
   Scenario: Row deletions in source database are replicated to the destination database
     Given A row present in the source database
       | id   | first_name | last_name | email                 |
