@@ -20,8 +20,7 @@ Feature: Data replication DB to DB
 Background: Example solution is deployed
   Given a running example
 
-  Scenario: New row in source database is replicated to the destination
-    databasee
+  Scenario: New row in source database is replicated to the destination database
     When A row is inserted in the source database
       | id   | first_name | last_name | email                 |
       | 1    | John       | Doe       |  john.doe@example.com |
@@ -29,8 +28,7 @@ Background: Example solution is deployed
       | id   | first_name | last_name | email                 |
       | 1    | John       | Doe       |  john.doe@example.com |
 
-  Scenario: Row updates in source database is replicated to the destination
-    databasee
+  Scenario: Row updates in source database is replicated to the destination database
     Given A row present in the source database
       | id   | first_name | last_name | email                 |
       | 2    | John       | Doe       |  john.doe@example.com |
