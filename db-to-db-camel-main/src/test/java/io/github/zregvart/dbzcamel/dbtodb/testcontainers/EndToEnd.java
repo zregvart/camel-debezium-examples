@@ -147,7 +147,7 @@ public final class EndToEnd implements En {
 				.get();
 		});
 
-		When("A row is inserted in the source database", (final Customer customer) -> {
+		When("a row is inserted in the source database", (final Customer customer) -> {
 			expectingPayload.set(true);
 			postgresql.create(customer);
 		});
@@ -161,19 +161,19 @@ public final class EndToEnd implements En {
 
 		Then("a row is present in the destination database", assertRowPresent);
 
-		When("A row is updated in the source database", (final Customer customer) -> {
+		When("a row is updated in the source database", (final Customer customer) -> {
 			expectingPayload.set(true);
 			postgresql.update(customer);
 		});
 
 		Then("an existing row is updated in the destination database", assertRowPresent);
 
-		When("A row with the id of {int} deleted from the source database", (final Integer id) -> {
+		When("a row with the id of {int} deleted from the source database", (final Integer id) -> {
 			expectingPayload.set(true);
 			postgresql.delete(id);
 		});
 
-		Then("an row with the id of {int} doesn't exist in the destination database", (final Integer id) -> {
+		Then("a row with the id of {int} doesn't exist in the destination database", (final Integer id) -> {
 			await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
 				final Optional<Customer> loaded = mysql.load(id);
 				assertThat(loaded).isEmpty();

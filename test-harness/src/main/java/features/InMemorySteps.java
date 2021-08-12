@@ -38,7 +38,7 @@ public final class InMemorySteps {
 	private static final ObjectMapper json = new ObjectMapper();
 
 	public static void registerWith(final CamelContext camel, final En en) {
-		en.When("A row is inserted in the source database", (final Customer customer) -> {
+		en.When("a row is inserted in the source database", (final Customer customer) -> {
 			try (ProducerTemplate producer = camel.createProducerTemplate()) {
 				final ObjectNode record = JsonNodeFactory.instance.objectNode();
 				record.putObject("source").put("table", "customers");
@@ -50,7 +50,7 @@ public final class InMemorySteps {
 			}
 		});
 
-		en.When("A row is updated in the source database", (final Customer customer) -> {
+		en.When("a row is updated in the source database", (final Customer customer) -> {
 			try (ProducerTemplate producer = camel.createProducerTemplate()) {
 				final ObjectNode record = JsonNodeFactory.instance.objectNode();
 				record.putObject("source").put("table", "customers");
@@ -62,7 +62,7 @@ public final class InMemorySteps {
 			}
 		});
 
-		en.When("A row with the id of {int} deleted from the source database", (final Integer id) -> {
+		en.When("a row with the id of {int} deleted from the source database", (final Integer id) -> {
 			final Customer customer = DATABASE.remove(id);
 
 			try (ProducerTemplate producer = camel.createProducerTemplate()) {
@@ -99,7 +99,7 @@ public final class InMemorySteps {
 				+ "  id = :?id");
 		});
 
-		en.Then("an row with the id of {int} doesn't exist in the destination database", (final Integer id) -> {
+		en.Then("a row with the id of {int} doesn't exist in the destination database", (final Integer id) -> {
 			assertProcessedSql(camel, "DELETE FROM customers\n"
 				+ "WHERE\n"
 				+ "  id = :?id");
