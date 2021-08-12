@@ -12,10 +12,6 @@
 -- limitations under the License.
 --
 
-ALTER SEQUENCE customers_id_seq RESTART WITH 10;
-
-INSERT INTO customers(id, first_name, last_name, email)
-	VALUES
-		(2, 'Jacob', 'Yates', 'jacob.yates@example.com'),
-		(3, 'Samara', 'Quinton', 'samara.quinton@example.com'),
-		(4, 'Hayden', 'Ventura', 'hayden.ventura@example.com');
+DROP
+	TABLE
+		IF EXISTS debezium_signal;

@@ -32,6 +32,11 @@ public final class PostgreSQLSourceDatabase extends PostgreSQLDatabase {
 	}
 
 	@Override
+	public void triggerSnapshot() {
+		super.triggerSnapshot();
+	}
+
+	@Override
 	public void update(final Customer customer) {
 		super.update(customer);
 	}

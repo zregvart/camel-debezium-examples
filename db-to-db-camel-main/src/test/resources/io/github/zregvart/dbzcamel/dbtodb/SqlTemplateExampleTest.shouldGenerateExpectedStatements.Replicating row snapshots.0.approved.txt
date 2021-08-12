@@ -1,0 +1,15 @@
+INSERT INTO customers (
+  id,
+  first_name,
+  last_name,
+  email
+) VALUES (
+  :?id,
+  :?first_name,
+  :?last_name,
+  :?email
+) ON DUPLICATE KEY UPDATE
+  id=VALUES(id),
+  first_name=VALUES(first_name),
+  last_name=VALUES(last_name),
+  email=VALUES(email)

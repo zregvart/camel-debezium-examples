@@ -109,7 +109,8 @@ public final class Debezium {
 			.with("database.password", postgresql.password())
 			.with("database.server.name", CONNECTOR_NAME)
 			.with("snapshot.mode", "never")
-			.with("plugin.name", "pgoutput");
+			.with("plugin.name", "pgoutput")
+			.with("signal.data.collection", "public.debezium_signal");
 
 		try {
 			@SuppressWarnings("resource")

@@ -42,3 +42,10 @@ Background: Example solution is deployed
   Scenario: Row deletions in source database are replicated to the destination database
     When a row with the id of 3 deleted from the source database
     Then a row with the id of 3 doesn't exist in the destination database
+
+  @dml @snapshot
+  Scenario: Replicating row snapshots
+    When a snapshot is triggered
+    Then a row is present in the destination database
+      | id   | first_name | last_name | email                      |
+      | 4    | Hayden     | Ventura   | hayden.ventura@example.com |

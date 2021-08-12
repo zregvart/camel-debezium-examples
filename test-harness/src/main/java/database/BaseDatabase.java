@@ -17,6 +17,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -177,6 +178,16 @@ abstract class BaseDatabase {
 	}
 
 	abstract State state();
+
+	void triggerSnapshot() {
+		try (Connection connection = dataSource().getConnection();
+			Statement insert = connection.createStatement()) {
+			insert.execute(
+				"INSERT INTO debezium_signal (type, data) VALUES ('execute-snapshot', '{\"data-collections\": [\"public.customers\"]}')");
+		} catch (final SQLException e) {
+			throw new AssertionError(e);
+		}
+	}
 
 	void update(final Customer customer) {
 		try (Connection connection = dataSource().getConnection();

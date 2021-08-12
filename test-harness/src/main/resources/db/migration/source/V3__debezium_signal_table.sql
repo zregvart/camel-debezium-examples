@@ -12,10 +12,13 @@
 -- limitations under the License.
 --
 
-ALTER SEQUENCE customers_id_seq RESTART WITH 10;
+CREATE
+	TABLE
+		debezium_signal(
+			id VARCHAR(42) NOT NULL DEFAULT gen_random_uuid(),
+			type VARCHAR(32) NOT NULL,
+			data VARCHAR(2048) NULL,
+			CONSTRAINT debezium_signal_pk PRIMARY KEY(id)
+		);
 
-INSERT INTO customers(id, first_name, last_name, email)
-	VALUES
-		(2, 'Jacob', 'Yates', 'jacob.yates@example.com'),
-		(3, 'Samara', 'Quinton', 'samara.quinton@example.com'),
-		(4, 'Hayden', 'Ventura', 'hayden.ventura@example.com');
+ALTER TABLE debezium_signal REPLICA IDENTITY FULL;

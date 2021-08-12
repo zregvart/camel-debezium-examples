@@ -128,7 +128,7 @@ public class SqlTemplatePropertyTest {
 	}
 
 	static CharacterArbitrary operations() {
-		return Arbitraries.chars().with('c', 'u', 'd');
+		return Arbitraries.chars().with('c', 'r', 'u', 'd');
 	}
 
 	static Arbitrary<String> tableName() {

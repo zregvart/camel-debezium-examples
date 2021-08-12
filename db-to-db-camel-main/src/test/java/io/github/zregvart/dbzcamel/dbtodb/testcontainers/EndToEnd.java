@@ -180,6 +180,11 @@ public final class EndToEnd implements En {
 			});
 		});
 
+		When("a snapshot is triggered", () -> {
+			expectingPayload.set(true);
+			postgresql.triggerSnapshot();
+		});
+
 		AfterStep(() -> {
 			if (expectingPayload.compareAndSet(true, false)) {
 				// wait for message to be delivered in order to proceed

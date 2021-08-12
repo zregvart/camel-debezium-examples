@@ -13,21 +13,14 @@
     limitations under the License.
 
 -->
-<#import "insert.ftl" as i>
-<#import "merge.ftl" as m>
-<#import "update.ftl" as u>
-<#import "delete.ftl" as d>
-<#switch body['op']>
-  <#case 'c'>
-    <@i.insert body['source']['table'] body['after']?keys />
-    <#break>
-  <#case 'r'>
-    <@m.merge body['source']['table'] body['after']?keys />
-  <#break>
-  <#case 'u'>
-    <@u.update body['source']['table'] headers['kafka.KEY'] body['after']?keys />
-    <#break>
-  <#case 'd'>
-    <@d.delete body['source']['table'] headers['kafka.KEY'] />
-    <#break>
-</#switch>
+<#import "columns.ftl" as c>
+<#macro merge table columns>
+INSERT INTO ${table} (
+<@c.list columns />
+) VALUES (
+<@c.list columns=columns prefix=":?" />
+) ON DUPLICATE KEY UPDATE
+<#list columns as column>
+  ${column}=VALUES(${column})<#sep>,
+</#list>
+</#macro>
