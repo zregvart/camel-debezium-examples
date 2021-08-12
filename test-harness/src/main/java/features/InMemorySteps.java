@@ -38,10 +38,6 @@ public final class InMemorySteps {
 	private static final ObjectMapper json = new ObjectMapper();
 
 	public static void registerWith(final CamelContext camel, final En en) {
-		en.Given("A row present in the source database", (final Customer customer) -> {
-			DATABASE.put(customer.id, customer);
-		});
-
 		en.When("A row is inserted in the source database", (final Customer customer) -> {
 			try (ProducerTemplate producer = camel.createProducerTemplate()) {
 				final ObjectNode record = JsonNodeFactory.instance.objectNode();
@@ -109,7 +105,7 @@ public final class InMemorySteps {
 				+ "  id = :?id");
 		});
 
-		en.After(DATABASE::clear);
+		en.Before(InMemorySteps::setupDatabase);
 	}
 
 	private static void assertProcessedSql(final CamelContext camel, final String statement) {
@@ -118,5 +114,11 @@ public final class InMemorySteps {
 
 		assertThat(jdbc.getReceivedCounter()).isOne();
 		assertThat(jdbc.getReceivedExchanges().get(0).getIn().getBody(String.class)).isEqualTo(statement);
+	}
+
+	private static void setupDatabase() {
+		DATABASE.clear();
+		DATABASE.put(2, new Customer(2, "John", "Doe", "john.doe@example.com"));
+		DATABASE.put(3, new Customer(3, "John", "Doe", "john.doe@example.com"));
 	}
 }

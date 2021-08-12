@@ -147,11 +147,6 @@ public final class EndToEnd implements En {
 				.get();
 		});
 
-		Given("A row present in the source database", (final Customer customer) -> {
-			expectingPayload.set(true);
-			postgresql.create(customer);
-		});
-
 		When("A row is inserted in the source database", (final Customer customer) -> {
 			expectingPayload.set(true);
 			postgresql.create(customer);

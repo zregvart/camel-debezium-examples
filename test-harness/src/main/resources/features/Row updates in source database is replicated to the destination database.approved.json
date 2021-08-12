@@ -10,40 +10,6 @@
       "kafka.TOPIC": "source.public.customers"
     },
     "body": {
-      "after": {
-        "id": 2,
-        "first_name": "John",
-        "last_name": "Doe",
-        "email": "john.doe@example.com"
-      },
-      "source": {
-        "version": "1.6.0.Final",
-        "connector": "postgresql",
-        "name": "source",
-        "ts_ms": 872835240000,
-        "snapshot": "false",
-        "db": "source",
-        "sequence": "[]",
-        "schema": "public",
-        "table": "customers",
-        "txId": 1,
-        "lsn": 1
-      },
-      "op": "c",
-      "ts_ms": 872835240000
-    }
-  },
-  {
-    "headers": {
-      "CamelMessageTimestamp": 872835240000,
-      "kafka.HEADERS": [],
-      "kafka.KEY": "{\"id\":2}",
-      "kafka.OFFSET": 0,
-      "kafka.PARTITION": 0,
-      "kafka.TIMESTAMP": 872835240000,
-      "kafka.TOPIC": "source.public.customers"
-    },
-    "body": {
       "before": {
         "id": 2,
         "first_name": "John",
