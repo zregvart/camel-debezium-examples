@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  checks:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -23,6 +23,6 @@ jobs:
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-maven-
     - name: Build and quick tests
-      run: mvn -B package
+      run: mvn --batch-mode --no-transfer-progress package
     - name: Slow tests
-      run: mvn -B verify
+      run: mvn --batch-mode --no-transfer-progress verify
