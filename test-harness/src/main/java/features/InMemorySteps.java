@@ -118,7 +118,7 @@ public final class InMemorySteps {
 
 	private static void setupDatabase() {
 		DATABASE.clear();
-		DATABASE.put(2, new Customer(2, "John", "Doe", "john.doe@example.com"));
-		DATABASE.put(3, new Customer(3, "John", "Doe", "john.doe@example.com"));
+		DATABASE.put(2, new Customer(2, "Jacob", "Yates", "jacob.yates@example.com"));
+		DATABASE.put(3, new Customer(3, "Samara", "Quinton", "samara.quinton@example.com"));
 	}
 }

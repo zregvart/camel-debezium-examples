@@ -23,20 +23,20 @@ Background: Example solution is deployed
   @dml @create
   Scenario: New row in source database is replicated to the destination database
     When a row is inserted in the source database
-      | id   | first_name | last_name | email                 |
-      | 1    | John       | Doe       |  john.doe@example.com |
+      | id | first_name | last_name | email                |
+      | 1  | John       | Doe       | john.doe@example.com |
     Then a row is present in the destination database
-      | id   | first_name | last_name | email                 |
-      | 1    | John       | Doe       |  john.doe@example.com |
+      | id | first_name | last_name | email                |
+      | 1  | John       | Doe       | john.doe@example.com |
 
   @dml @update
   Scenario: Row updates in source database is replicated to the destination database
     When a row is updated in the source database
-      | id   | first_name | last_name | email                 |
-      | 2    | Mark       | Doe       |  john.doe@example.com |
+      | id | first_name | last_name | email                    |
+      | 2  | Chuck      | Dowson    | chuck.dowson@example.com |
     Then an existing row is updated in the destination database
-      | id   | first_name | last_name | email                 |
-      | 2    | Mark       | Doe       |  john.doe@example.com |
+      | id | first_name | last_name | email                    |
+      | 2  | Chuck      | Dowson    | chuck.dowson@example.com |
 
   @dml @delete
   Scenario: Row deletions in source database are replicated to the destination database

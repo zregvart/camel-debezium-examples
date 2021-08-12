@@ -12,15 +12,15 @@
     "body": {
       "before": {
         "id": 2,
-        "first_name": "John",
-        "last_name": "Doe",
-        "email": "john.doe@example.com"
+        "first_name": "Jacob",
+        "last_name": "Yates",
+        "email": "jacob.yates@example.com"
       },
       "after": {
         "id": 2,
-        "first_name": "Mark",
-        "last_name": "Doe",
-        "email": "john.doe@example.com"
+        "first_name": "Chuck",
+        "last_name": "Dowson",
+        "email": "chuck.dowson@example.com"
       },
       "source": {
         "version": "1.6.0.Final",

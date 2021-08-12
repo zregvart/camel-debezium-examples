@@ -12,9 +12,9 @@
     "body": {
       "before": {
         "id": 3,
-        "first_name": "John",
-        "last_name": "Doe",
-        "email": "john.doe@example.com"
+        "first_name": "Samara",
+        "last_name": "Quinton",
+        "email": "samara.quinton@example.com"
       },
       "source": {
         "version": "1.6.0.Final",

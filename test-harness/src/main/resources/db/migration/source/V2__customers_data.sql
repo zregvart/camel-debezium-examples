@@ -14,4 +14,4 @@
 
 ALTER SEQUENCE customers_id_seq RESTART WITH 10;
 
-INSERT INTO customers (id, first_name, last_name, email) VALUES (2, 'John', 'Doe', 'john.doe@example.com'), (3, 'John', 'Doe', 'john.doe@example.com');
+INSERT INTO customers (id, first_name, last_name, email) VALUES (2, 'Jacob', 'Yates', 'jacob.yates@example.com'), (3, 'Samara', 'Quinton', 'samara.quinton@example.com');
