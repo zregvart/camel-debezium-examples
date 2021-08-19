@@ -13,54 +13,33 @@
  */
 package io.github.zregvart.dbzcamel.dbtodb.memory;
 
-import java.util.Properties;
-
-import javax.sql.DataSource;
-
 import io.cucumber.java8.En;
 import io.github.zregvart.dbzcamel.dbtodb.Route;
 
 import org.apache.camel.CamelContext;
-import org.apache.camel.impl.DefaultCamelContext;
-import org.apache.camel.spi.PropertiesComponent;
 
 import static org.apache.camel.builder.AdviceWith.adviceWith;
-import static org.mockito.Mockito.mock;
 
-import features.InMemorySteps;
+import memory.Camel;
 
 public final class InMemory implements En {
 
-	final CamelContext camel;
-
-	public InMemory() {
-		camel = new DefaultCamelContext();
-		camel.disableJMX();
+	public InMemory(final Camel camel) {
+		@SuppressWarnings("resource")
+		final CamelContext camelContext = camel.camel();
 
 		Given("a running example", () -> {
-			@SuppressWarnings("resource")
-			final PropertiesComponent properties = camel.getPropertiesComponent();
-			final Properties initial = new Properties();
-			initial.put("kafka.bootstrapServers", "not used");
-			properties.setInitialProperties(initial);
+			camelContext.addRoutes(new Route());
 
-			camel.getRegistry().bind("app.dataSource", mock(DataSource.class));
-
-			camel.addRoutes(new Route());
-
-			adviceWith(camel, "kafka-to-db", a -> {
+			adviceWith(camelContext, "kafka-to-db", a -> {
 				a.replaceFromWith("direct:receive");
 				a.interceptSendToEndpoint("jdbc:*")
 					.skipSendToOriginalEndpoint()
 					.to("mock:jdbc");
 			});
 
-			camel.start();
+			camelContext.start();
 		});
-
-		After(camel::stop);
-
-		InMemorySteps.registerWith(camel, this);
 	}
 
 }

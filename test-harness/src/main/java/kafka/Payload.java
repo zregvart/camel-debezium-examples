@@ -11,22 +11,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package features;
+package kafka;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Map;
 
-import io.cucumber.java8.En;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.JsonNode;
 
-import database.PostgreSQLSourceDatabase;
+@JsonPropertyOrder({"headers", "body"})
+final class Payload {
+	@JsonProperty
+	final JsonNode body;
 
-public final class DebeziumSteps {
-	private DebeziumSteps() {
-	}
+	@JsonProperty
+	final Map<String, Object> headers;
 
-	public static void registerWith(final En en, final AtomicBoolean expectingPayload, final PostgreSQLSourceDatabase postgresql) {
-		en.When("a snapshot is triggered", () -> {
-			expectingPayload.set(true);
-			postgresql.triggerSnapshot();
-		});
+	public Payload(final Map<String, Object> headers, final JsonNode body) {
+		this.headers = headers;
+		this.body = body;
 	}
 }

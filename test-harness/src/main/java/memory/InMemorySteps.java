@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package features;
+package memory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import data.Customer;
 
-public final class InMemorySteps {
+public final class InMemorySteps implements En {
 
 	private static final Map<Integer, Customer> DATABASE = new HashMap<>();
 
@@ -44,9 +44,12 @@ public final class InMemorySteps {
 
 	private static final ObjectMapper json = new ObjectMapper();
 
-	public static void registerWith(final CamelContext camel, final En en) {
-		en.When("a row is inserted in the source database", (final Customer customer) -> {
-			try (ProducerTemplate producer = camel.createProducerTemplate()) {
+	public InMemorySteps(final Camel camel) {
+		@SuppressWarnings("resource")
+		final CamelContext camelContext = camel.camel();
+
+		When("a row is inserted in the source database", (final Customer customer) -> {
+			try (ProducerTemplate producer = camelContext.createProducerTemplate()) {
 				final ObjectNode record = JsonNodeFactory.instance.objectNode();
 				record.putObject("source").put("table", "customers");
 				record.putPOJO("after", customer);
@@ -57,8 +60,8 @@ public final class InMemorySteps {
 			}
 		});
 
-		en.When("a row is updated in the source database", (final Customer customer) -> {
-			try (ProducerTemplate producer = camel.createProducerTemplate()) {
+		When("a row is updated in the source database", (final Customer customer) -> {
+			try (ProducerTemplate producer = camelContext.createProducerTemplate()) {
 				final ObjectNode record = JsonNodeFactory.instance.objectNode();
 				record.putObject("source").put("table", "customers");
 				record.putPOJO("before", DATABASE.get(customer.id));
@@ -69,10 +72,10 @@ public final class InMemorySteps {
 			}
 		});
 
-		en.When("a row with the id of {int} deleted from the source database", (final Integer id) -> {
+		When("a row with the id of {int} deleted from the source database", (final Integer id) -> {
 			final Customer customer = DATABASE.remove(id);
 
-			try (ProducerTemplate producer = camel.createProducerTemplate()) {
+			try (ProducerTemplate producer = camelContext.createProducerTemplate()) {
 				final ObjectNode record = JsonNodeFactory.instance.objectNode();
 				record.putObject("source").put("table", "customers");
 				record.putPOJO("before", customer);
@@ -82,7 +85,7 @@ public final class InMemorySteps {
 			}
 		});
 
-		en.Then("a row is present in the destination database", (final DataTable dataTable) -> assertProcessedSql(camel, "INSERT INTO customers (\n"
+		Then("a row is present in the destination database", (final DataTable dataTable) -> assertProcessedSql(camelContext, "INSERT INTO customers (\n"
 			+ "  email,\n"
 			+ "  id,\n"
 			+ "  first_name,\n"
@@ -109,7 +112,7 @@ public final class InMemorySteps {
 				+ "  first_name=VALUES(first_name),\n"
 				+ "  last_name=VALUES(last_name)"));
 
-		en.Then("an existing row is updated in the destination database", (final DataTable dataTable) -> assertProcessedSql(camel, "UPDATE customers SET\n"
+		Then("an existing row is updated in the destination database", (final DataTable dataTable) -> assertProcessedSql(camelContext, "UPDATE customers SET\n"
 			+ "  email = :?email,\n"
 			+ "  id = :?id,\n"
 			+ "  first_name = :?first_name,\n"
@@ -117,14 +120,14 @@ public final class InMemorySteps {
 			+ "WHERE\n"
 			+ "  id = :?id"));
 
-		en.Then("a row with the id of {int} doesn't exist in the destination database",
-			(final Integer id) -> assertProcessedSql(camel, "DELETE FROM customers\n"
+		Then("a row with the id of {int} doesn't exist in the destination database",
+			(final Integer id) -> assertProcessedSql(camelContext, "DELETE FROM customers\n"
 				+ "WHERE\n"
 				+ "  id = :?id"));
 
-		en.When("a snapshot is triggered", () -> {
+		When("a snapshot is triggered", () -> {
 			for (final Customer customer : DATABASE_SNAPSHOT) {
-				try (ProducerTemplate producer = camel.createProducerTemplate()) {
+				try (ProducerTemplate producer = camelContext.createProducerTemplate()) {
 					final ObjectNode record = JsonNodeFactory.instance.objectNode();
 					record.putObject("source").put("table", "customers");
 					record.putPOJO("after", customer);
@@ -136,7 +139,7 @@ public final class InMemorySteps {
 			}
 		});
 
-		en.Before(InMemorySteps::setupDatabase);
+		Before(InMemorySteps::setupDatabase);
 	}
 
 	private static void assertProcessedSql(final CamelContext camel, final String statement, final String... alternatives) {

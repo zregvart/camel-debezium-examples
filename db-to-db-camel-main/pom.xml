@@ -35,10 +35,6 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.camel</groupId>
-			<artifactId>camel-core-engine</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.camel</groupId>
 			<artifactId>camel-api</artifactId>
 		</dependency>
 		<dependency>
@@ -69,10 +65,6 @@
 			<groupId>org.apache.camel</groupId>
 			<artifactId>camel-jackson</artifactId>
 			<scope>runtime</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-annotations</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
@@ -144,7 +136,6 @@
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
-			<version>3.11.2</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -216,7 +207,7 @@
 								<packages>features</packages>
 							</selectors>
 							<parameters>
-								<cucumber.glue>features,io.github.zregvart.dbzcamel.dbtodb.memory</cucumber.glue>
+								<cucumber.glue>data,memory,io.github.zregvart.dbzcamel.dbtodb.memory</cucumber.glue>
 							</parameters>
 							<tweaks>
 								<additionalLauncherDependencies>
@@ -236,7 +227,7 @@
 								<packages>features</packages>
 							</selectors>
 							<parameters>
-								<cucumber.glue>features,io.github.zregvart.dbzcamel.dbtodb.testcontainers</cucumber.glue>
+								<cucumber.glue>data,database,debezium,io.github.zregvart.dbzcamel.dbtodb.testcontainers</cucumber.glue>
 							</parameters>
 							<tweaks>
 								<additionalLauncherDependencies>

@@ -11,11 +11,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package features;
+package database;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.cucumber.java8.En;
 import io.cucumber.java8.StepDefinitionBody;
@@ -24,18 +23,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import data.Customer;
-import database.MySQLDestinationDatabase;
-import database.PostgreSQLSourceDatabase;
+import kafka.Payloads;
 
-public final class CustomerSteps {
-	private CustomerSteps() {
-	}
+public final class CustomerSteps implements En {
 
-	public static void registerWith(final En en, final AtomicBoolean expectingPayload, final PostgreSQLSourceDatabase postgresql,
-		final MySQLDestinationDatabase mysql) {
-
-		en.When("a row is inserted in the source database", (final Customer customer) -> {
-			expectingPayload.set(true);
+	public CustomerSteps(final PostgreSQLSourceDatabase postgresql, final MySQLDestinationDatabase mysql, final Payloads payloads) {
+		When("a row is inserted in the source database", (final Customer customer) -> {
+			payloads.expectPayload();
 			postgresql.create(customer);
 		});
 
@@ -46,26 +40,26 @@ public final class CustomerSteps {
 			});
 		};
 
-		en.Then("a row is present in the destination database", assertRowPresent);
+		Then("a row is present in the destination database", assertRowPresent);
 
-		en.When("a row is updated in the source database", (final Customer customer) -> {
-			expectingPayload.set(true);
+		When("a row is updated in the source database", (final Customer customer) -> {
+			payloads.expectPayload();
 			postgresql.update(customer);
 		});
 
-		en.Then("an existing row is updated in the destination database", assertRowPresent);
+		Then("an existing row is updated in the destination database", assertRowPresent);
 
-		en.When("a row with the id of {int} deleted from the source database", (final Integer id) -> {
-			expectingPayload.set(true);
+		When("a row with the id of {int} deleted from the source database", (final Integer id) -> {
+			payloads.expectPayload();
 			postgresql.delete(id);
 		});
 
-		en.Then("a row with the id of {int} doesn't exist in the destination database", (final Integer id) -> {
+		Then("a row with the id of {int} doesn't exist in the destination database", (final Integer id) -> {
 			await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
 				final Optional<Customer> loaded = mysql.load(id);
 				assertThat(loaded).isEmpty();
 			});
 		});
-
 	}
+
 }

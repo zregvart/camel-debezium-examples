@@ -11,13 +11,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package features;
+package data;
 
 import java.util.Map;
 
 import io.cucumber.java8.En;
-
-import data.Customer;
 
 public final class CustomerData implements En {
 	public CustomerData() {
