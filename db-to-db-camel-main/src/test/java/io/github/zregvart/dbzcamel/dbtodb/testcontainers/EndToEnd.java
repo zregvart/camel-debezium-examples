@@ -18,18 +18,15 @@ import static configuration.Async.newCompletableFuture;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.cucumber.java8.En;
 import io.cucumber.java8.HookBody;
-import io.cucumber.java8.StepDefinitionBody;
 import io.github.zregvart.dbzcamel.dbtodb.App;
 
 import org.apache.camel.CamelContext;
@@ -55,14 +52,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spun.util.persistence.Loader;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 import configuration.Async;
 import configuration.LifecycleSupport;
-import data.Customer;
 import database.MySQLDestinationDatabase;
 import database.PostgreSQLSourceDatabase;
 import debezium.Debezium;
+import features.CustomerSteps;
+import features.DebeziumSteps;
 import kafka.Kafka;
 
 public final class EndToEnd implements En {
@@ -147,43 +144,8 @@ public final class EndToEnd implements En {
 				.get();
 		});
 
-		When("a row is inserted in the source database", (final Customer customer) -> {
-			expectingPayload.set(true);
-			postgresql.create(customer);
-		});
-
-		final StepDefinitionBody.A1<Customer> assertRowPresent = (final Customer customer) -> {
-			await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
-				final Optional<Customer> loaded = mysql.load(customer.id);
-				assertThat(loaded).contains(customer);
-			});
-		};
-
-		Then("a row is present in the destination database", assertRowPresent);
-
-		When("a row is updated in the source database", (final Customer customer) -> {
-			expectingPayload.set(true);
-			postgresql.update(customer);
-		});
-
-		Then("an existing row is updated in the destination database", assertRowPresent);
-
-		When("a row with the id of {int} deleted from the source database", (final Integer id) -> {
-			expectingPayload.set(true);
-			postgresql.delete(id);
-		});
-
-		Then("a row with the id of {int} doesn't exist in the destination database", (final Integer id) -> {
-			await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
-				final Optional<Customer> loaded = mysql.load(id);
-				assertThat(loaded).isEmpty();
-			});
-		});
-
-		When("a snapshot is triggered", () -> {
-			expectingPayload.set(true);
-			postgresql.triggerSnapshot();
-		});
+		CustomerSteps.registerWith(this, expectingPayload, postgresql, mysql);
+		DebeziumSteps.registerWith(this, expectingPayload, postgresql);
 
 		AfterStep(() -> {
 			if (expectingPayload.compareAndSet(true, false)) {
