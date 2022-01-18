@@ -46,7 +46,7 @@ public final class Camel implements En {
 	}
 
 	@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "We need to pass it and there is no immutable version of CamelContext")
-	public CamelContext camel() {
+	public CamelContext context() {
 		return camel;
 	}
 }

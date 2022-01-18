@@ -46,7 +46,7 @@ public final class InMemorySteps implements En {
 
 	public InMemorySteps(final Camel camel) {
 		@SuppressWarnings("resource")
-		final CamelContext camelContext = camel.camel();
+		final CamelContext camelContext = camel.context();
 
 		When("a row is inserted in the source database", (final Customer customer) -> {
 			try (ProducerTemplate producer = camelContext.createProducerTemplate()) {

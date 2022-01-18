@@ -26,7 +26,7 @@ public final class InMemory implements En {
 
 	public InMemory(final Camel camel) {
 		@SuppressWarnings("resource")
-		final CamelContext camelContext = camel.camel();
+		final CamelContext camelContext = camel.context();
 
 		Given("a running example", () -> {
 			camelContext.addRoutes(new Route());
