@@ -25,6 +25,8 @@ import org.apache.camel.spi.PropertiesComponent;
 
 import static org.mockito.Mockito.mock;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public final class Camel implements En {
 	private final CamelContext camel;
 
@@ -43,6 +45,7 @@ public final class Camel implements En {
 		After(camel::stop);
 	}
 
+	@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "We need to pass it and there is no immutable version of CamelContext")
 	public CamelContext camel() {
 		return camel;
 	}

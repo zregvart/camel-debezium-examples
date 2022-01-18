@@ -144,5 +144,10 @@
 			<artifactId>approvaltests-util</artifactId>
 			<version>${com.approvaltests.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.github.spotbugs</groupId>
+			<artifactId>spotbugs-annotations</artifactId>
+			<version>${dep.spotbugs.version}</version>
+		</dependency>
 	</dependencies>
 </project>

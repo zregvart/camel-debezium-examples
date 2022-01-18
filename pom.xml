@@ -17,7 +17,7 @@
 	<parent>
 		<groupId>org.basepom</groupId>
 		<artifactId>basepom-oss</artifactId>
-		<version>39</version>
+		<version>42</version>
 	</parent>
 	<groupId>io.github.zregvart.dbzcamel</groupId>
 	<artifactId>parent</artifactId>
@@ -40,6 +40,8 @@
 		<io.debezium.version>1.6.0.Final</io.debezium.version>
 		<org.testcontainers.version>1.15.3</org.testcontainers.version>
 		<net.jqwik.version>1.5.3</net.jqwik.version>
+
+		<dep.spotbugs.version>4.3.0</dep.spotbugs.version>
 	</properties>
 
 	<modules>
